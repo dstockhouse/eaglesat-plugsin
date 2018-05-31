@@ -1,0 +1,7 @@
+Running: xsim.dir/gap_counter_behav/xsimk -simmode gui -wdb gap_counter_behav.wdb -simrunnum 0 -socket 46741
+Design successfully loaded
+Design Loading Memory Usage: 46992 KB (Peak: 47112 KB)
+Design Loading CPU Usage: 30 ms
+Simulation completed
+Simulation Memory Usage: 129704 KB (Peak: 194264 KB)
+Simulation CPU Usage: 40 ms

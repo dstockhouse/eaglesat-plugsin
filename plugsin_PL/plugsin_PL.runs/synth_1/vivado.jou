@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2017.4 (64-bit)
+# SW Build 2086221 on Fri Dec 15 20:54:30 MST 2017
+# IP Build 2085800 on Fri Dec 15 22:25:07 MST 2017
+# Start of session at: Sat Mar 31 17:42:59 2018
+# Process ID: 9102
+# Current directory: /home/eaglesat/Documents/plugsin/plugsin_PL/plugsin_PL.runs/synth_1
+# Command line: vivado -log interface.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source interface.tcl
+# Log file: /home/eaglesat/Documents/plugsin/plugsin_PL/plugsin_PL.runs/synth_1/interface.vds
+# Journal file: /home/eaglesat/Documents/plugsin/plugsin_PL/plugsin_PL.runs/synth_1/vivado.jou
+#-----------------------------------------------------------
+source interface.tcl -notrace
