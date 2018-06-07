@@ -326,7 +326,6 @@ int GPIOPinRead(int pin) {
 } // int GPIOPinRead()
 
 
-
 /**** Function GPIOPinPulse ****
  * Pulses the value of GPIO /pin/ to HIGH as briefly as possible for at least
  * 500 ns
