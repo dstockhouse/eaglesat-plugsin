@@ -1,4 +1,4 @@
-# EagleSat-2 Plugs-in
+# EagleSat-2 Plugs-In
 
 This repository contains code for the EagleSat-2 project at Embry-Riddle
 Aeronautical University, Prescott, plugs-in prototype test. This is a public
@@ -7,8 +7,8 @@ be accepted by members of EagleSat.
 
 The project is intended to run with [Xillybus](http://xillybus.com/) on a
 Zynq-7020 SoC. Xillybus handles the communication between the processor and FPGA
-components of the Zynq by appearing as a file stream to the processor (running
-their own Linux distro, Xillinux) and a FIFO buffer to the FPGA. More
+components of the Zynq by interfacig as a file stream to the processor (running
+their own Linux distro, Xillinux) and as a FIFO buffer to the FPGA. More
 information can be found in the [Xillybus
 documentation](http://xillybus.com/doc).
 
@@ -46,7 +46,7 @@ high-tolerance SPI slave, but the camera's SPI interface may be more particular
 about clock timing and require a dedicated hardware solution. If nothing else,
 it needs to be investigated further.
 
-#### Contact
+### Contact
 
 Hilly Paige, Project Manager  
 [paigeh@my.erau.edu](mailto:paigeh@my.erau.edu)

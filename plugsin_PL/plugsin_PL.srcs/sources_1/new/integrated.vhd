@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- File:
---	interface.vhd
+--	integrated.vhd
 --
 -- Description:
 --	This is the integration between the three serial LVDS interfaces to the
