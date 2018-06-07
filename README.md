@@ -1,4 +1,4 @@
-## eaglesat-plugsin
+# EagleSat-2 Plugs-in
 
 This repository contains code for the EagleSat-2 project at Embry-Riddle
 Aeronautical University, Prescott, plugs-in prototype test. This is a public
@@ -32,10 +32,10 @@ communication modules.
 Vivado project **plugsin_PL** directory. This needs to be more accessible and
 less redundant.
 
-* The C code running on Linux on the Zynq is in working order but also hasn't
-  been exhaustively tested. The file I/O operations need to be tested with
-simulated data streams to make sure the software correctly handles missed pixels
-and any other error conditions we can throw at it. 
+* The C code running on Linux on the Zynq is in working order but hasn't been
+  exhaustively tested. The file I/O operations need to be tested with simulated
+data streams to make sure the software correctly handles missed pixels and any
+other error conditions we can throw at it. 
 
 * If convenient, a hardware SPI module on the FPGA that can operate more quickly
   than the bit-banged SPI code thrown together for Linux. Alternatively, the
@@ -46,7 +46,7 @@ high-tolerance SPI slave, but the camera's SPI interface may be more particular
 about clock timing and require a dedicated hardware solution. If nothing else,
 it needs to be investigated further.
 
-##### Contact
+#### Contact
 
 Hilly Paige, Project Manager  
 [paigeh@my.erau.edu](mailto:paigeh@my.erau.edu)
