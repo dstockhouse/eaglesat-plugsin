@@ -257,5 +257,7 @@ int enableLVDSOutput(int channel) {
 	returnVal1 = registerWrite(CHANNEL_EN_L, channel & 0xff);
 	returnVal2 = registerWrite(CHANNEL_EN_M, (channel >> 8) & 0xff);
 
+	return (returnVal1<<4) | returnVal2;
+
 } // Function enableLVDSOutput()
 

@@ -46,7 +46,6 @@ int spiInit(void) {
 
 	int returnVal;
 
-
 	/*** Initialize GPIO ports for use with SPI ***/
 
 	// Initialize chip select
@@ -170,8 +169,6 @@ int spiIsNotInit(void) {
  */
 int spiWrite(unsigned char *buf, int bufSize) {
 
-	int returnVal;
-	int fileMOSI, fileCLK;
 	int i, bit;
 
 	// Ensure SPI has been initialized
@@ -228,7 +225,6 @@ int spiWrite(unsigned char *buf, int bufSize) {
  */
 int spiRead(unsigned char *buf, int bufSize) {
 
-	int returnVal;
 	int i, bit;
 
 	// Ensure SPI has been initialized
