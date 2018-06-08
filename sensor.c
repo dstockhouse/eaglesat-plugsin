@@ -8,13 +8,12 @@
  * 	pixel sensor through the Xillybus interface to PL. Xillybus is 
  * 	configured to have the following interfaces for capturing image data:
  * 		- xillybus_cmos_rh_32 & xillybus_cmos_rh_32
- * 			
  *
  * Author:
  * 	David Stockhouse & Amber Scarborough
  *
- * Revision 1.2
- * 	Last edited 3/31/18
+ * Revision 1.3
+ * 	Last edited 6/7/18
  *
  ****************************************************************************/
 
@@ -25,24 +24,25 @@
 #include "registerAccess.h"
 #include "spiControl.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <time.h>
 
 
 /**** Function frameRead ****
  * Communicate with the sensor to read out one frame and store it in a new
- * image file using generateFilename().
+ * image file using generateFilename(). /exposure/ is the exposure time in
+ * seconds.
  */
 int frameRead(int exposure) {
 
 	char filename[FILENAME_SIZE];
 	int bytesInHigh = 0, bytesInLow = 0;
-	
+
 	// Buffer for pixel data
 	unsigned char pixelBuf[APS_ROWS*APS_COLS];
 
@@ -65,13 +65,11 @@ int frameRead(int exposure) {
 	// End exposure, request frame
 	GPIOPinPulse(FRAME_REQ);
 
-	// Wait frame overhead time
+	// Wait frame overhead time, 20ms
 	usleep(20000);
 
 
-
 	/*** Start readout ***/
-
 
 	// Open high order xillybus upstream file
 	dataHigh = open(PIXEL_FILE_HIGH, O_RDONLY);
@@ -320,47 +318,6 @@ int registerInit(void) {
 } // Function registerInit();
 
 
-/**** Function sensorInit() ****
- * Wrapper for all of the other initialization functions so that the sensor 
- * interface can be initialized with a single function call
- */
-int sensorInit(void) {
-
-	int returnVal;
-
-	// Initialize SPI
-	spiInit();
-	returnVal = spiIsNotInit();
-	if(returnVal) {
-		printf("SPI not initialized: Error %d\n", returnVal);
-		return 1;
-	}
-
-	// Initialize GPIO pins
-	returnVal = GPIOPinInit(FRAME_REQ, GPIO_OUT);
-	if(returnVal) {
-		printf("Couldn't initialize pin %d (FRAME_REQ): Error %d\n",
-				FRAME_REQ, returnVal);
-		return 2;
-	}
-	returnVal = GPIOPinInit(T_EXP1, GPIO_OUT);
-	if(returnVal) {
-		printf("Couldn't initialize pin %d (T_EXP1): Error %d\n",
-				T_EXP1, returnVal);
-		return 3;
-	}
-	returnVal = GPIOPinInit(SYS_RES_N, GPIO_OUT);
-	if(returnVal) {
-		printf("Couldn't initialize pin %d (SYS_RES_N): Error %d\n",
-				SYS_RES_N, returnVal);
-		return 4;
-	}
-
-	// Write GPIO pins to initial values
-
-
-} // Function sensorInit()
-
 
 /******* Local functions *******/
 
@@ -401,5 +358,4 @@ int allwrite(int fd, unsigned char *buf, int len) {
 	return 0;
 
 } // Function allwrite()
-
 

@@ -1,12 +1,27 @@
-#include <stdio.h>
+/*****************************************************************************
+ *
+ * File:
+ * 	makePNGFinal.c
+ *
+ * Description:
+ * 	Inputs a raw pixel array for an image and creates a PNG file for
+ * 	display. Hasn't been tested to satisfaction.
+ *
+ * Author:
+ * 	Jake Watts-Squires and Rylie Breslin
+ *
+ * Revision 1.0
+ * 	Last edited 6/7/18
+ *
+ ****************************************************************************/
+
 #include <malloc.h>
 #include <png.h>
-
+#include <stdio.h>
 
 void setRGB(png_byte* ptr, float val);
 float *createImage(int width, int height, int bitsreamArray[]);
 int writeImage(char* filename, int width, int height, float *buffer, char* title);
-
 
 int main(int argc, char *argv[])
 {

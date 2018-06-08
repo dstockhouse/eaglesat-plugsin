@@ -20,13 +20,14 @@
 
 #include "sensor.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <time.h>
+
 
 /**** Register names from CMV2000 datasheet rev3.8 ****/
 #define	START1L		3
@@ -188,8 +189,7 @@
 #define BV(I)	(1<<I)
 
 
-
-// Function declarations
+/**** Function declarations ****/
 int registerWrite(unsigned char, unsigned char);
 int registerRead(unsigned char, unsigned char *);
 
@@ -201,7 +201,6 @@ int setOutputMode(unsigned char);
 int disableLVDSReceiver(void);
 int setInputClock(unsigned char);
 int enableLVDSOutput(int);
-
 
 
 #endif	// REGISTER_ACCESS_H

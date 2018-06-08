@@ -10,8 +10,8 @@
  * Author:
  * 	David Stockhouse & Amber Scarborough
  *
- * Revision 1.0
- * 	Last edited 3/3/18
+ * Revision 1.3
+ * 	Last edited 6/7/18
  *
  ****************************************************************************/
 
@@ -22,13 +22,14 @@
 #include "gpio.h"
 #include "registerAccess.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <time.h>
+
 
 #define APS_ROWS	1088
 #define APS_COLS	2048
@@ -37,7 +38,8 @@
 #define PIXEL_FILE_LOW	"/dev/xillybus_cmos_rl_32"
 
 // Pin connections from the Zedboard PS to the CMV2000. Available pins found
-// in the xillydemo.ucf file in the src directory of the vivado xillybus code
+// in the xillydemo.ucf file in the src directory of the vivado xillybus code.
+// Path to that file in spiControl.h
 
 // JB1
 #define T_EXP1		(32+54)

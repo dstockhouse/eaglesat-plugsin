@@ -4,16 +4,25 @@
  * 	spiControl.c
  *
  * Description:
- * 	Contains funtions for controlling an SPI device through bit banging a
- * 	GPIO port. Because it uses software user-space accesses to GPIO ports
- * 	to manage SPI signals, this interface is very slow (~4kHz), so it
- * 	should not be used in a system with a minimum SPI data rate
+ * 	Contains funtions for controlling an SPI device through bit banging a 
+ * 	GPIO port. Because it uses software user-space accesses to GPIO ports 
+ * 	to manage SPI signals, this interface is very slow (~4kHz), so it 
+ * 	should not be used in a system with a minimum SPI data rate. 
+ * 	Additionally, since the process operates in user-space, it is subject 
+ * 	to being interrupted and preempted if there are many other processes 
+ * 	running on the system at the same time (like reading input streams 
+ * 	from the FPGA), so there is potential for inconsistent periods between 
+ * 	clock pulses. Ideally, this shouldn't matter because SPI is a serial 
+ * 	interface, but some devices aren't tolerant of this kind of behavior. 
+ * 	The CMV2000 datasheet isn't clear as to whether or not this will be a 
+ * 	concern, so we can only hope it won't be until we can run actual 
+ * 	hardware tests.
  *
  * Author:
  * 	David Stockhouse
  *
- * Revision 1.2
- * 	Last edited 3/31/18
+ * Revision 1.3
+ * 	Last edited 6/7/18
  *
  ****************************************************************************/
 
@@ -21,17 +30,17 @@
 
 #include "gpio.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <time.h>
 
 
 /**** Function spiInit ****
- * Initializes an SPI port 
+ * Initializes the software SPI port 
  */
 int spiInit(void) {
 
@@ -69,7 +78,7 @@ int spiInit(void) {
 	}
 
 
-	/*** Set pins to initial values ***/
+	/*** Set outputs to initial values ***/
 	returnVal = GPIOPinWrite(CS, CS_INACTIVE);
 	if(returnVal) {
 		printf("Couldn't set CS (pin %d) to %d. Error code %d.\n", CS, CS_INACTIVE, returnVal);
@@ -420,3 +429,4 @@ int main(int argc, char **argv) {
 
 } // Function main()
 */
+

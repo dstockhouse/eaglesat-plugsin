@@ -11,8 +11,8 @@
  * Author:
  * 	David Stockhouse
  *
- * Revision 1.0
- * 	Last edited 3/10/18
+ * Revision 1.1
+ * 	Last edited 6/7/18
  *
  ****************************************************************************/
 
@@ -21,13 +21,13 @@
 #include "sensor.h"
 #include "spiControl.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <time.h>
 
 
 /**** Function registerWrite ****
@@ -61,18 +61,9 @@ int registerWrite(unsigned char address, unsigned char value) {
 int registerRead(unsigned char address, unsigned char *value) {
 
 	int returnVal;
-	// unsigned char buf[2];
 	unsigned char buf;
 
-	/*** Load output buffer with proper information ***/
-
-	/*
-	// First byte is 0 (read) followed by the 7 bit address
-	buf[0] = (~BV(7)) & address;
-
-	// Second byte is 0 so that the input buffer can be populated
-	buf[1] = 0x00;
-	*/
+	// Load output buffer with proper information
 	buf = (~BV(7)) & address;
 
 	// Write to the SPI port
@@ -267,5 +258,4 @@ int enableLVDSOutput(int channel) {
 	returnVal2 = registerWrite(CHANNEL_EN_M, (channel >> 8) & 0xff);
 
 } // Function enableLVDSOutput()
-
 
