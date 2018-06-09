@@ -1,6 +1,6 @@
-backup
-backups/
-gpio/
+/backup
+/backups/
+/gpio/
 *.o
 testrun
 *~
