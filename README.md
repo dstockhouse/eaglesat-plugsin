@@ -6,7 +6,7 @@ repository because having a private repository is non-free, but edits will only
 be accepted by members of EagleSat.
 
 The project is intended to run with [Xillybus](http://xillybus.com/) on a
-Zynq-7020 SoC. Xillybus handles the communication between the processor and FPGA
+Zynq-7000 SoC. Xillybus handles the communication between the processor and FPGA
 components of the Zynq by interfacig as a file stream to the processor (running
 their own Linux distro, Xillinux) and as a FIFO buffer to the FPGA. More
 information can be found in the [Xillybus

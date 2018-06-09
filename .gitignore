@@ -1,3 +1,6 @@
 backup
-/backups
-/gpio
+backups/
+gpio/
+*.o
+testrun
+*~
