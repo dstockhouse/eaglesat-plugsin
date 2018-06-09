@@ -5,17 +5,20 @@ Aeronautical University, Prescott, plugs-in prototype test. This is a public
 repository because having a private repository is non-free, but edits will only
 be accepted by members of EagleSat.
 
-The project is intended to run with [Xillybus](http://xillybus.com/) on a
-Zynq-7000 SoC. Xillybus handles the communication between the processor and FPGA
-components of the Zynq by interfacig as a file stream to the processor (running
-their own Linux distro, Xillinux) and as a FIFO buffer to the FPGA. More
+The project is intended to run with [Xillybus](http://xillybus.com/) on the
+Avnet [Zedboard](http://www.zedboard.org/product/zedboard) housing a Zynq-7020
+SoC, to be soon migrated to the
+[Microzed](http://www.zedboard.org/product/microzed). Xillybus handles the
+communication between the processor (PS) and FPGA (PL) components of the Zynq
+by interfacing as a file stream to the processor (running their own Linux
+distro, Xillinux) and as an interface to a FIFO buffer to the FPGA.  More
 information can be found in the [Xillybus
 documentation](http://xillybus.com/doc).
 
 The C code running on Xillinux has been tested to a limited capacity. The FPGA
-configuration for Vivado (2017?) still has yet to be completed and fully tested.
-The Vivado project directories contain a lot of files for Vivado's use that
-aren't necessary for editing for most purposes. 
+configuration for Vivado (2017.4) still has yet to be completed and fully
+tested.  The Vivado project directories contain a lot of files for Vivado's use
+that aren't necessary for editing for most purposes. 
 
 Currently the project contains several redundant files and lots to be flushed
 out, but that will be in the process of being fixed soon.
