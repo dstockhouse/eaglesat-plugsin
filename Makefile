@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-g -Wall
 LIBS=
-DEPS=src/sensor.h src/gpio.h src/generateFilename.h src/spiControl.h src/registerAccess.h
-SRCS=src/sensor.c src/gpio.c src/generateFilename.c src/spiControl.c src/registerAccess.c src/main.c
+DEPS=src/ps/sensor.h src/ps/gpio.h src/ps/generateFilename.h src/ps/spiControl.h src/ps/registerAccess.h
+SRCS=src/ps/sensor.c src/ps/gpio.c src/ps/generateFilename.c src/ps/spiControl.c src/ps/registerAccess.c src/ps/main.c
 OBJS=$(SRCS:.c=.o)
 MAIN=testrun
 
@@ -13,4 +13,4 @@ $(MAIN): $(OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	$(RM) src/*.o $(MAIN)
+	$(RM) src/ps/*.o $(MAIN)

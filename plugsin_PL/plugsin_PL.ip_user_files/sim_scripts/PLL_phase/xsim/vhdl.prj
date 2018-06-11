@@ -1,4 +1,0 @@
-vhdl xil_defaultlib  \
-"../../../bd/PLL_phase/sim/PLL_phase.vhd" \
-
-nosort

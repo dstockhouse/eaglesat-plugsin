@@ -1,6 +1,6 @@
 /backup
 /backups/
 /gpio/
-/src/*.o
+/src/**/*.o
 /testrun
 *~
