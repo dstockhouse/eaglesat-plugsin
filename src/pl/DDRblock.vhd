@@ -11,8 +11,8 @@
 -- Author:
 --	David Stockhouse & Sam Janoff
 --
--- Revision 1.1
--- Last edited: 3/4/18
+-- Revision 1.2
+-- Last edited: 6/10/18
 ------------------------------------------------------------------------------
 
 
@@ -31,13 +31,6 @@ end DDRblock;
 
 architecture Behavioral of DDRblock is
 
-	component DFF
-		Port ( D : in STD_LOGIC;
-		       clk : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       Q : out STD_LOGIC);
-	end component;
-
 	-- Inverted clock signal and internal signal between the falling edge
 	-- DFF and the relatching DFF
 	signal inv_clk, D_out_falling : std_logic := '0';
@@ -53,23 +46,5 @@ begin
 	D_rising <= D when rising_edge(clk);
 	D_falling <= D_out_falling when rising_edge(clk);
 	D_out_falling <= D when rising_edge(inv_clk);
-
---	-- Rising edge DFF
---	DFF_RISING : DFF port map (D => D,
---				   clk => clk,
---				   rst => rst,
---				   Q => D_rising);
---
---	-- Falling edge, not relatched DFF
---	DFF_OUT_FALLING : DFF port map (D => D,
---					clk => inv_clk,
---					rst => rst,
---					Q => D_out_falling);
---
---	-- Falling edge relatched DFF
---	DFF_OUT_RELATCHED : DFF port map (D => D,
---					  clk => clk,
---					  rst => rst,
---					  Q => D_falling);
 
 end Behavioral;

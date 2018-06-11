@@ -8,8 +8,8 @@
 -- Author:
 --	David Stockhouse & Sam Janoff
 --
--- Revision 1.1
--- Last edited: 3/4/18
+-- Revision 1.2
+-- Last edited: 6/10/18
 ------------------------------------------------------------------------------
 
 
@@ -33,13 +33,6 @@ architecture Behavioral of DDRshift is
 		       D_rising : out STD_LOGIC;
 		       D_falling : out STD_LOGIC;
 		       clkout : out STD_LOGIC);
-	end component;
-
-	component DFF
-		Port ( D : in STD_LOGIC;
-		       clk : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       Q : out STD_LOGIC);
 	end component;
 
 	-- Internal signals from the DDR block on the rising and falling edges
@@ -67,36 +60,7 @@ begin
 		internal((2*I) + 1) <= internal((2*(I + 1)) + 1) when rising_edge(int_clk);
 		internal(2*I) <= internal(2*(I + 1)) when rising_edge(int_clk);
 
---
---		-- Setup the edge case to route the first input from DDR block
---		INIT : if I = 4 generate
---
---			START_FALL : DFF port map(D => int_fall,
---						  clk => int_clk,
---						  rst => rst,
---						  Q => internal(9));
---
---			START_RISE : DFF port map(D => int_rise,
---						  clk => int_clk,
---						  rst => rst,
---						  Q => internal(8));
---		end generate INIT;
---
---		OTHER_BITS : if I < 4 generate
---
---			DFF_FALL : DFF port map(D => internal((2*(I + 1)) + 1),
---						clk => int_clk,
---						rst => rst,
---						Q => internal((2*I) + 1));
---
---			DFF_RISE : DFF port map(D => internal(2*(I + 1)),
---						clk => int_clk,
---						rst => rst,
---						Q => internal(2*I));
---		end generate OTHER_BITS;
-
 	end generate SHIFT_GEN;
-
 
 	-- Move internal signals to output
 	Q <= internal;

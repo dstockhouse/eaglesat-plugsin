@@ -11,8 +11,8 @@
 -- Author:
 --	David Stockhouse & Sam Janoff
 --
--- Revision 1.1
--- Last edited: 3/4/18
+-- Revision 1.2
+-- Last edited: 6/10/18
 ------------------------------------------------------------------------------
 
 
@@ -30,13 +30,6 @@ end DDRlatch;
 
 architecture Behavioral of DDRlatch is
 
-	component bitBuffer is
-		Port ( D : in STD_LOGIC_VECTOR (9 downto 0);
-		       rst : in STD_LOGIC;
-		       latch : in STD_LOGIC;
-		       Q : out STD_LOGIC_VECTOR (9 downto 0));
-	end component;
-
 	component DDRshift is
 		Port ( D : in STD_LOGIC;
 		       clk : in STD_LOGIC;
@@ -50,10 +43,6 @@ architecture Behavioral of DDRlatch is
 begin
 
 	-- Generate buffer
---	BUFFER_GEN : bitBuffer port map (D => internal,
---	                                 rst => rst,
---	                                 latch => latch,
---	                                 Q => Q);
 	Q <= internal when rising_edge(latch);
 
 	-- Generate DDR shift register
