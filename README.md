@@ -9,31 +9,32 @@ The project is intended to run with [Xillybus](http://xillybus.com/) on the
 Avnet [Zedboard](http://www.zedboard.org/product/zedboard) housing a Zynq-7020
 SoC, to be soon migrated to the
 [Microzed](http://www.zedboard.org/product/microzed). Xillybus handles the
-communication between the processor (PS) and FPGA (PL) components of the Zynq
-by interfacing as a file stream to the processor (running their own Linux
-distro, Xillinux) and as an interface to a FIFO buffer to the FPGA.  More
-information can be found in the [Xillybus
-documentation](http://xillybus.com/doc).
+communication between the processor (PS) and FPGA (PL) components of the Zynq by
+interfacing as a file stream to the processor (running their own Linux distro,
+Xillinux) and as an interface to a FIFO buffer to the FPGA. More information can
+be found in the [Xillybus documentation](http://xillybus.com/doc).
 
 The C code running on Xillinux has been tested to a limited capacity. The FPGA
 configuration for Vivado (2017.4) still has yet to be completed and fully
-tested.  The Vivado project directories contain a lot of files for Vivado's use
-that aren't necessary for editing for most purposes. 
+tested.
 
-Currently the project contains several redundant files and lots to be flushed
-out, but that will be in the process of being fixed soon.
+## Building
 
-### TODO
+The software can only be run successfully on a Zedboard processor system running
+Xillinux because there are GPIO and FPGA data stream files that need to exist in
+order to be accessed. But it is still useful for remote work to compile in order
+to make sure there are no errors or warnings in compilation. To build, type
+`make` into any Unix shell while in the project base directory. The `testrun`
+executable is created in the same directory and can be invoked from the command
+line. The intermediary object files are left in **src/ps/**. There aren't
+currently any required libraries not included in most systems.
+
+## TODO
 
 * The FPGA configuration is incomplete. While the LVDS interface to the image
   sensor works as far as limited tests have shown, that module needs to be
 tested more rigorously and integrated together with the UART and other
 communication modules. 
-
-* FPGA configuration files are kept all over the place. Some early files are in
-  the **vhdl** directory, but most of the working VHDL code is buried within the
-Vivado project **plugsin_PL** directory. This needs to be more accessible and
-less redundant.
 
 * The C code running on Linux on the Zynq is in working order but hasn't been
   exhaustively tested. The file I/O operations need to be tested with simulated
