@@ -6,9 +6,10 @@
  * Description:
  * 	Inputs a raw pixel array for an image and creates a PNG file for
  * 	display. Hasn't been tested to satisfaction.
+ * 	This file contains some code found online and left unmodified.
  *
  * Author:
- * 	Jake Watts-Squires and Rylie Breslin
+ * 	Jake Watts-Squires & Rylie Breslin
  *
  * Revision 1.0
  * 	Last edited 6/7/18
