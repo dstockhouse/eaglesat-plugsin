@@ -3,5 +3,6 @@
 /gpio/
 /src/**/*.o
 /testrun
+vivado*/
 *~
 *.swp
