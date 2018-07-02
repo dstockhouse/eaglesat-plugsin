@@ -96,14 +96,14 @@ begin
 				  and clk_sel((I-2) mod 6) = '0'
 				  and clk_sel((I+2) mod 6) = '0')
 			  	  else
-				  -- Block of 4
+				  -- Center in a block of 4
 				  5 when clk_sel(I) = '1'
 				  and (clk_sel((I-1) mod 6) = '1'
 				  and clk_sel((I+1) mod 6) = '1'
 				  and ((clk_sel((I-2) mod 6) = '1'
 				  and clk_sel((I+2) mod 6) = '0')
 				  or (clk_sel((I-2) mod 6) = '0'
-				  and clk_sel((I+2) mod 6) = '1'))
+				  and clk_sel((I+2) mod 6) = '1')))
 			  	  else
 				  -- Center of a block of 5 (Ex. 011111)
 				  6 when clk_sel(I) = '1'

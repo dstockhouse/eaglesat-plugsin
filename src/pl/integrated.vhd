@@ -31,7 +31,7 @@ entity integrated is
 	       out_high : out STD_LOGIC_VECTOR(31 downto 0);
 	       out_low : out STD_LOGIC_VECTOR(31 downto 0);
 	       latch : out STD_LOGIC;
-       	   eof : out STD_LOGIC);
+	       eof : out STD_LOGIC);
 end integrated;
 
 architecture Behavioral of integrated is
@@ -108,13 +108,14 @@ begin
 	lval <= q_ctl(1);
 
 
+	-- Monitor fval signal of the CTL line for valid pixel data
 	FRAMING : process(fval)
 	begin
 
 		-- Keep track of whether we are in a valid frame readout
 		if rising_edge(fval) then
 
-			-- Indicate frame readout has become
+			-- Indicate frame readout has become valid
 			frame_started <= '1';
 
 		end if; -- rising_edge(fval)
@@ -129,10 +130,16 @@ begin
 	end process; -- FRAMING
 
 
+	-- Shift the data if any of the LVDS channels latches
 	LATCH_SHIFT : process(int_latch1, int_latch2, int_latch_ctl)
 	begin
 
+		variable latch_counter : integer := 0;
+
         if dval = '1' then
+
+		-- If rising edge on any latch, shift those latched bytes
+
 		if rising_edge(int_latch1) then
 			for I in 3 downto 1 loop
 				int_d1(I) <= int_d1(I-1);
@@ -145,17 +152,24 @@ begin
 			end loop;
 		end if;
 
-		if rising_edge(int_latch_ctl)) and dval = '1') then
-
+		if (rising_edge(int_latch_ctl) and dval = '1') then
 
 			int_d1(0) <= q1;
 			int_d2(0) <= q2;
 
 		end if; -- Rising edge on latches while valid data on input lines
 
+
+
+	else
+
+		latch_counter := 0;
+
+	end if; -- dval = '1', so CTL says there is valid pixel data on the input channels
+
 	end process; -- LATCH_SHIFT
 
-	-- Send internal signals to output
+	-- Send internal signals to output. First concatenate 32 bits together
 	out_high <= int_d2(3) & int_d2(2) & int_d2(1) & int_d2(0);
 	out_low <= int_d1(3) & int_d1(2) & int_d1(1) & int_d1(0);
 
