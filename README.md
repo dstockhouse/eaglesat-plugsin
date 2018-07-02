@@ -44,6 +44,11 @@ without copying the files into the project directory and modifying local copies
 instead of the repository source files (as a check box in the source addition
 dialog). Directory names of the form "vivado\*/" will be ignored by git. 
 
+Another reason for the necessity of Vivado is that we use intellectual property
+(IP) blocks included with Vivado that would be difficult and not as robust for
+us to generate on our own. Specifically, there are three IP blocks we have need
+of so far: a clock generator, phase-locked loop (PLL), and FIFO buffer.
+
 ## TODO
 
 * The FPGA configuration is incomplete. While the LVDS interface to the image
