@@ -7,6 +7,8 @@
  * 	Contains functions to handle GPIO operations on Xillinux through file
  * 	read and write operations as described primarily by 
  * 	https://falsinsoft.blogspot.co.il/2012/11/access-gpio-from-linux-user-space.html
+ * 	Some GPIO pin numbering information is at 
+ * 	http://billauer.co.il/blog/2014/07/bash-gpio-xillinux/
  *
  * Author:
  * 	David Stockhouse
