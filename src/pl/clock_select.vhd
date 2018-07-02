@@ -62,6 +62,8 @@ begin
 
 
 	-- Determine the measure of likelihood for each bit
+	-- Enumerating all of the possibilities of configurations isn't ideal,
+	-- but I couldn't think of more elegant ways to do it
 	MEASURE : for I in 0 to 5 generate
 
 		measurement(I) <= 1 when clk_sel(I) = '1' 
@@ -77,6 +79,7 @@ begin
 				  and clk_sel((I+1) mod 6) = '0'
 			  	  and clk_sel((I-2) mod 6) = '0'
 				  and clk_sel((I+2) mod 6) = '0'))
+			  	  else
 				  3 when clk_sel(I) = '1'
 				  and ((clk_sel((I-1) mod 6) = '0'
 				  and clk_sel((I+1) mod 6) = '1'
