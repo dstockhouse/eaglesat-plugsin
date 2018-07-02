@@ -20,6 +20,8 @@ tested.
 
 ## Building
 
+### C Source
+
 The software can only be run successfully on a Zedboard processor system running
 Xillinux because there are GPIO and FPGA data stream files that need to exist in
 order to be accessed. But it is still useful for remote work to compile in order
@@ -28,6 +30,19 @@ to make sure there are no errors or warnings in compilation. To build, type
 executable is created in the same directory and can be invoked from the command
 line. The intermediary object files are left in **src/ps/**. There aren't
 currently any required libraries not included in most systems.
+
+### VHDL Source
+
+The VHDL source code in this project can't be compiled as easily as the C source
+(or not by any means that I'm aware of). Instead we use the Vivado IDE to
+synthesize and simulate all of the source code when it is ready. The intention
+for this repository is that any miscellaneous files required by a Vivado project
+be left out of version control so that they don't clutter all of the commits
+with hundreds of files unnecessary to be shared all the time. It's possible in
+Vivado to use source files from a directory outside the project directory
+without copying the files into the project directory and modifying local copies
+instead of the repository source files (as a check box in the source addition
+dialog). Directory names of the form "vivado\*/" will be ignored by git. 
 
 ## TODO
 
