@@ -13,7 +13,7 @@
 --	David Stockhouse
 --
 -- Revision 1.1
--- Last edited: 4/18/18
+-- Last edited: 7/03/18
 ------------------------------------------------------------------------------
 
 
@@ -26,8 +26,8 @@ entity integrated is
 	       lvds_d2 : in STD_LOGIC;
 	       lvds_ctl : in STD_LOGIC;
 	       lvds_clk : in STD_LOGIC;
-	       rst : in STD_LOGIC;
 	       pix_clk : in STD_LOGIC;
+	       rst : in STD_LOGIC;
 	       out_high : out STD_LOGIC_VECTOR(31 downto 0);
 	       out_low : out STD_LOGIC_VECTOR(31 downto 0);
 	       latch : out STD_LOGIC;
@@ -40,15 +40,15 @@ architecture Behavioral of integrated is
 	------ External component declarations ------
 
 	component interface
-		Port ( D : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       clk : in STD_LOGIC;
-		       pix_clk : in STD_LOGIC;
+		Port ( d : in STD_LOGIC;
 		       train_en : in STD_LOGIC;
 		       train : in STD_LOGIC_VECTOR (9 downto 0);
+		       pix_clk : in STD_LOGIC;
+		       clk : in STD_LOGIC;
+		       rst : in STD_LOGIC;
 		       latch_sig : out STD_LOGIC := '0';
 		       locked : out STD_LOGIC := '0';
-		       Q : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
+		       q : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
 	end component;
 
 
@@ -71,7 +71,7 @@ architecture Behavioral of integrated is
 
 begin
 
-	INTERFACE_1 : interface port map (D => lvds_d1,
+	INTERFACE_1 : interface port map (d => lvds_d1,
 					  rst => rst,
 					  clk => lvds_clk,
 					  pix_clk => pix_clk,
@@ -79,9 +79,9 @@ begin
 					  train => "0001010101",
 					  latch_sig => int_latch1,
 					  locked => int_locked1,
-					  Q => q1);
+					  q => q1);
 
-	INTERFACE_2 : interface port map (D => lvds_d2,
+	INTERFACE_2 : interface port map (d => lvds_d2,
 					  rst => rst,
 					  clk => lvds_clk,
 					  pix_clk => pix_clk,
@@ -89,9 +89,9 @@ begin
 					  train => "0001010101",
 					  latch_sig => int_latch2,
 					  locked => int_locked2,
-					  Q => q2);
+					  q => q2);
 
-	INTERFACE_ctl : interface port map (D => lvds_ctl,
+	INTERFACE_ctl : interface port map (d => lvds_ctl,
 					    rst => rst,
 					    clk => lvds_clk,
 					    pix_clk => pix_clk,
@@ -99,78 +99,102 @@ begin
 					    train => "1000000000",
 					    latch_sig => int_latch_ctl,
 					    locked => int_locked_ctl,
-					    Q => q_ctl);
+					    q => q_ctl);
 
 
 	-- Parse the bits of the control channel 
-	dval <= q_ctl(0);
-	fval <= q_ctl(2);
-	lval <= q_ctl(1);
+	dval <= '0' when rst = '1' else
+		q_ctl(0);
+	fval <= '0' when rst = '1' else
+		q_ctl(2);
+	lval <= '0' when rst = '1' else
+		q_ctl(1);
 
 
-	-- Monitor fval signal of the CTL line for valid pixel data
-	FRAMING : process(fval)
+	-- Monitor fval signal of the CTL line for valid frame information
+	FRAMING : process(fval, rst)
 	begin
 
-		-- Keep track of whether we are in a valid frame readout
-		if rising_edge(fval) then
+		if rst = '0' then
+			-- Keep track of whether we are in a valid frame readout
+			if rising_edge(fval) then
 
 			-- Indicate frame readout has become valid
-			frame_started <= '1';
+				frame_started <= '1';
 
-		end if; -- rising_edge(fval)
+			end if; -- rising_edge(fval)
 
-		if(falling_edge(fval)) then
+			if(falling_edge(fval)) then
 
 			-- Send EOF to xillybus ports
-			eof <= '1';
+				eof <= '1';
 
-		end if; -- falling_edge(fval)
+			end if; -- falling_edge(fval)
+
+		else
+
+			frame_started <= '0';
+			eof <= '0';
+
+		end if; -- rst
 
 	end process; -- FRAMING
 
 
-	-- Shift the data if any of the LVDS channels latches
+	-- Shift the data if any of the LVDS channels latch
 	LATCH_SHIFT : process(int_latch1, int_latch2, int_latch_ctl)
-	begin
 
 		variable latch_counter : integer := 0;
 
-        if dval = '1' then
+	begin
 
-		-- If rising edge on any latch, shift those latched bytes
+		if rst = '0' then
 
-		if rising_edge(int_latch1) then
-			for I in 3 downto 1 loop
-				int_d1(I) <= int_d1(I-1);
-			end loop;
-		end if;
+			-- Only shift data if data is valid
+			if dval = '1' then
 
-		if rising_edge(int_latch2) then
-			for I in 3 downto 1 loop
-				int_d2(I) <= int_d2(I-1);
-			end loop;
-		end if;
+				-- If rising edge on any latch, shift those latched bytes
 
-		if (rising_edge(int_latch_ctl) and dval = '1') then
+				if rising_edge(int_latch1) then
+					for I in 3 downto 1 loop
+						int_d1(I) <= int_d1(I-1);
+					end loop;
+				end if;
 
-			int_d1(0) <= q1;
-			int_d2(0) <= q2;
+				if rising_edge(int_latch2) then
+					for I in 3 downto 1 loop
+						int_d2(I) <= int_d2(I-1);
+					end loop;
+				end if;
 
-		end if; -- Rising edge on latches while valid data on input lines
+				if rising_edge(int_latch_ctl) and dval = '1' then
 
+					int_d1(0) <= q1;
+					int_d2(0) <= q2;
 
+				end if; -- Rising edge on latches while valid data on input lines
 
-	else
+			else
 
-		latch_counter := 0;
+				latch_counter := 0;
 
-	end if; -- dval = '1', so CTL says there is valid pixel data on the input channels
+			end if; -- dval = '1', so CTL says there is valid pixel data on the input channels
+
+		else
+
+			int_d1 <= (others => (others => '0'));
+			int_d2 <= (others => (others => '0'));
+			int_ctl <= (others => (others => '0'));
+			latch_counter := 0;
+
+		end if; -- rst
 
 	end process; -- LATCH_SHIFT
 
 	-- Send internal signals to output. First concatenate 32 bits together
-	out_high <= int_d2(3) & int_d2(2) & int_d2(1) & int_d2(0);
-	out_low <= int_d1(3) & int_d1(2) & int_d1(1) & int_d1(0);
+	out_high <= (others => '0') when rst = '1' else
+		    int_d2(3) & int_d2(2) & int_d2(1) & int_d2(0);
+	out_low <= (others => '0') when rst = '1' else
+		   int_d1(3) & int_d1(2) & int_d1(1) & int_d1(0);
 
 end Behavioral;

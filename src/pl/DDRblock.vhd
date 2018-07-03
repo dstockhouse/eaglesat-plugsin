@@ -12,7 +12,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.2
--- Last edited: 6/10/18
+-- Last edited: 7/03/18
 ------------------------------------------------------------------------------
 
 
@@ -21,11 +21,11 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 
 entity DDRblock is
-	Port ( D : in STD_LOGIC;
+	Port ( d : in STD_LOGIC;
 	       clk : in STD_LOGIC;
 	       rst : in STD_LOGIC;
-	       D_rising : out STD_LOGIC;
-	       D_falling : out STD_LOGIC;
+	       d_rising : out STD_LOGIC;
+	       d_falling : out STD_LOGIC;
 	       clkout : out STD_LOGIC);
 end DDRblock;
 
@@ -33,18 +33,23 @@ architecture Behavioral of DDRblock is
 
 	-- Inverted clock signal and internal signal between the falling edge
 	-- DFF and the relatching DFF
-	signal inv_clk, D_out_falling : std_logic := '0';
+	signal inv_clk, d_out_falling : std_logic := '0';
 
 begin
 
 	-- Inverse clock
-	inv_clk <= not clk;
+	inv_clk <= '0' when rst = '1' else
+		   not clk;
 
 	-- Output clock is the same as the input clock
-	clkout <= clk;
+	clkout <= '0' when rst = '1' else
+		  clk;
 
-	D_rising <= D when rising_edge(clk);
-	D_falling <= D_out_falling when rising_edge(clk);
-	D_out_falling <= D when rising_edge(inv_clk);
+	d_rising <= '0' when rst = '1' else
+		    d when rising_edge(clk);
+	d_falling <= '0' when rst = '1' else
+		     d_out_falling when rising_edge(clk);
+	d_out_falling <= '0' when rst = '1' else
+			 d when rising_edge(inv_clk);
 
 end Behavioral;

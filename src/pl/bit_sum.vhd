@@ -9,7 +9,7 @@
 --	David Stockhouse
 --
 -- Revision 1.0
--- Last edited: 3/5/18
+-- Last edited: 7/03/18
 ------------------------------------------------------------------------------
 
 
@@ -31,7 +31,8 @@ architecture Behavioral of bit_sum is
 begin
 
 	-- Count up all the bits
-	count <= conv_integer(bits(0)) + 
+	count <= 0 when rst = '1' else
+		 conv_integer(bits(0)) + 
 		 conv_integer(bits(1)) +
 		 conv_integer(bits(2)) +
 		 conv_integer(bits(3)) +

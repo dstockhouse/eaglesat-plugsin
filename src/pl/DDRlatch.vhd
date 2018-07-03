@@ -12,7 +12,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.2
--- Last edited: 6/10/18
+-- Last edited: 7/03/18
 ------------------------------------------------------------------------------
 
 
@@ -21,20 +21,20 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 
 entity DDRlatch is
-	Port ( D : in STD_LOGIC;
+	Port ( d : in STD_LOGIC;
+	       latch : in STD_LOGIC;
 	       clk : in STD_LOGIC;
 	       rst : in STD_LOGIC;
-	       latch : in STD_LOGIC;
-	       Q : out STD_LOGIC_VECTOR (9 downto 0) := (others => '0'));
+	       q : out STD_LOGIC_VECTOR (9 downto 0) := (others => '0'));
 end DDRlatch;
 
 architecture Behavioral of DDRlatch is
 
 	component DDRshift is
-		Port ( D : in STD_LOGIC;
+		Port ( d : in STD_LOGIC;
 		       clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
-		       Q : out STD_LOGIC_VECTOR (9 downto 0));
+		       q : out STD_LOGIC_VECTOR (9 downto 0));
 	end component;
 
 	-- Internal signal between the output of the SR and input of buffer
@@ -43,12 +43,13 @@ architecture Behavioral of DDRlatch is
 begin
 
 	-- Generate buffer
-	Q <= internal when rising_edge(latch);
+	q <= (others => '0') when rst = '1' else
+	     internal when rising_edge(latch);
 
 	-- Generate DDR shift register
-	SHIFT_GEN : DDRshift port map (D => D,
+	SHIFT_GEN : DDRshift port map (d => d,
 	                               clk => clk,
 	                               rst => rst, 
-	                               Q => internal);
+	                               q => internal);
 
 end Behavioral;

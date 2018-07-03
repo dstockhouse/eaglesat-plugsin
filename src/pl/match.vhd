@@ -33,10 +33,11 @@ end match;
 
 architecture Behavioral of match is
 
+	-- int_shifted stores the input 10-bit test value rotated each 10 bits
 	type shift_t is array (0 to 9) of std_logic_vector(9 downto 0);
-
 	signal int_shifted : shift_t;
 
+	-- Boolean indicating which shifted strings match the key
 	signal int_match : std_logic_vector(9 downto 0);
 
 	signal int_shift : integer := 0;
@@ -47,8 +48,8 @@ begin
 
 	ROTATE_GEN : for I in 0 to 9 generate
 
-		int_shifted(I) <= to_stdlogicvector(to_bitvector(test) rol I) when rst = '0' else
-				  (others => '0');
+		int_shifted(I) <= (others => '0') when rst = '1' else
+				  to_stdlogicvector(to_bitvector(test) rol I);
 
 	end generate ROTATE_GEN;
 
@@ -72,7 +73,7 @@ begin
 		     conv_integer(int_match(9)) when train_en = '1' and rst = '0' else
 		     0 when not rst = '0';
 
-	SHIFTING : process (int_match)
+	SHIFTING : process (int_match, rst)
 	begin
 
 		SHIFT_GEN : for I in 0 to 9 loop
@@ -90,9 +91,10 @@ begin
 	matched <= '1' when int_count > 0 and rst = '0' else
 		   '0';
 
-	shifted <= int_shifted(int_shift) when rst = '0' else
-		   (others => '0');
+	shifted <= (others => '0') when rst = '1' else
+		   int_shifted(int_shift);
 	
-	shift <= int_shift;
+	shift <= 0 when rst = '1' else
+		 int_shift;
 
 end Behavioral;

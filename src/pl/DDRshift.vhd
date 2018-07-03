@@ -9,7 +9,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.2
--- Last edited: 6/10/18
+-- Last edited: 7/03/18
 ------------------------------------------------------------------------------
 
 
@@ -18,20 +18,20 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 
 entity DDRshift is
-	Port ( D : in STD_LOGIC;
+	Port ( d : in STD_LOGIC;
 	       clk : in STD_LOGIC;
 	       rst : in STD_LOGIC;
-	       Q : out STD_LOGIC_VECTOR (9 downto 0) := (others => '0'));
+	       q : out STD_LOGIC_VECTOR (9 downto 0) := (others => '0'));
 end DDRshift;
 
 architecture Behavioral of DDRshift is
 
 	component DDRblock
-		Port ( D : in STD_LOGIC;
+		Port ( d : in STD_LOGIC;
 		       clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
-		       D_rising : out STD_LOGIC;
-		       D_falling : out STD_LOGIC;
+		       d_rising : out STD_LOGIC;
+		       d_falling : out STD_LOGIC;
 		       clkout : out STD_LOGIC);
 	end component;
 
@@ -44,25 +44,30 @@ architecture Behavioral of DDRshift is
 begin
 
 	-- Setup the DDR block
-	DDRBLOCK_GEN : DDRblock port map(D => D,
+	DDRBLOCK_GEN : DDRblock port map(d => d,
 					 clk => clk,
 					 rst => rst,
-					 D_rising => int_rise,
-					 D_falling => int_fall,
+					 d_rising => int_rise,
+					 d_falling => int_fall,
 					 clkout => int_clk);
 
-	internal(9) <= int_fall when rising_edge(int_clk);
-	internal(8) <= int_rise when rising_edge(int_clk);
+	internal(9) <= (others => '0') when rst = '1' else
+		       int_fall when rising_edge(int_clk);
+	internal(8) <= (others => '0') when rst = '1' else
+		       int_rise when rising_edge(int_clk);
 
 	-- Create 5 steps for the DDR shift register
 	SHIFT_GEN : for I in 0 to 3 generate
 
-		internal((2*I) + 1) <= internal((2*(I + 1)) + 1) when rising_edge(int_clk);
-		internal(2*I) <= internal(2*(I + 1)) when rising_edge(int_clk);
+		internal((2*I) + 1) <= (others => '0') when rst = '1' else
+			               internal((2*(I + 1)) + 1) when rising_edge(int_clk);
+		internal(2*I) <= (others => '0') when rst = '1' else
+				 internal(2*(I + 1)) when rising_edge(int_clk);
 
 	end generate SHIFT_GEN;
 
 	-- Move internal signals to output
-	Q <= internal;
+	q <= (others => '0') when rst = '1' else
+	     internal;
 
 end Behavioral;

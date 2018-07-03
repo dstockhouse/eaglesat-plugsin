@@ -26,7 +26,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.4
--- Last edited: 4/10/18
+-- Last edited: 7/03/18
 ------------------------------------------------------------------------------
 
 
@@ -39,15 +39,15 @@ use IEEE.NUMERIC_STD.ALL;
 
 
 entity interface is
-	Port ( D : in STD_LOGIC;
-	       rst : in STD_LOGIC;
-	       clk : in STD_LOGIC;
-	       pix_clk : in STD_LOGIC;
+	Port ( d : in STD_LOGIC;
 	       train_en : in STD_LOGIC;
 	       train : in STD_LOGIC_VECTOR (9 downto 0);
-	       latch_sig : out STD_LOGIC := '0';
+	       pix_clk : in STD_LOGIC;
+	       clk : in STD_LOGIC;
+	       rst : in STD_LOGIC;
+	       out_latch : out STD_LOGIC := '0';
 	       locked : out STD_LOGIC := '0';
-	       Q : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
+	       q : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
 end interface;
 
 architecture Behavioral of interface is
@@ -56,18 +56,18 @@ architecture Behavioral of interface is
 	------ External component declarations ------
 
 	component DDRlatch is
-		Port ( D : in STD_LOGIC;
+		Port ( d : in STD_LOGIC;
+		       latch : in STD_LOGIC;
 		       clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
-		       latch : in STD_LOGIC;
-		       Q : out STD_LOGIC_VECTOR (9 downto 0));
+		       q : out STD_LOGIC_VECTOR (9 downto 0));
 	end component;
 
-	component PLL_phase_wrapper is
-		Port ( clk_in : in STD_LOGIC;
+	component pll_wrapper is
+		Port ( clk : in STD_LOGIC;
+		       rst : in STD_LOGIC;
 		       clk_out : out STD_LOGIC_VECTOR ( 5 downto 0 );
-		       locked : out STD_LOGIC;
-		       rst : in STD_LOGIC);
+		       locked : out STD_LOGIC;);
 	end component;
 
 	component match is
@@ -82,10 +82,10 @@ architecture Behavioral of interface is
 
 	component clock_select is
 		Port ( clk_sel : in STD_LOGIC_VECTOR (5 downto 0);
-		train_en : in STD_LOGIC;
-		rst : in STD_LOGIC;
-		chosen : out integer;
-		confident : out STD_LOGIC);
+		       train_en : in STD_LOGIC;
+		       rst : in STD_LOGIC;
+		       chosen : out integer;
+		       confident : out STD_LOGIC);
 	end component;
 
 
@@ -98,35 +98,36 @@ architecture Behavioral of interface is
 	-- Internal shift register latch signal and inverted clock
 	signal int_latch, inv_clk, pll_locked : std_logic;
 
-	-- The type /phase_set/ is an array of ten bit vectors representing the
+	-- The type phase_set is an array of ten bit vectors representing the
 	-- six words shifted in by each phase clock
 	type phase_set is array (0 to 5) of std_logic_vector (9 downto 0);
 	signal internal : phase_set := (others => (others => '0'));
 	signal internal_shifted : phase_set := (others => (others => '0'));
 
-	-- /clk_sel/ is a boolean representing which phase clocks have
+	-- clk_sel is a boolean representing which phase clocks have
 	-- the correct training data, even if it's shifted a few bits
 	signal clk_sel : std_logic_vector(0 to 5) := (others => '0');
 
-	-- /clk_choice/ is which of the phase clocks is selected as the
+	-- clk_choice is which of the phase clocks is selected as the
 	-- correct phase for the input line
 	signal clk_choice : integer := 0;
 
-	-- /sel/ is an array of integers that keeps track of which
+	-- sel is an array of integers that keeps track of which
 	-- phased clocks shifted the correct data and if they are
 	-- a discrete number of bits out of sync
-	-- /shift_sel/ keeps track of how many bits the correctly 
+	-- shift_sel keeps track of how many bits the correctly 
 	-- phased clocks are out of sync
 	type sel is array (0 to 5) of integer;
 	signal shift_sel : sel := (others => 0);
 
-	-- /qtemp/ is the 10-bit output latched from the serial input line
+	-- qtemp is the 10-bit output latched from the serial input line
 	signal qtemp : std_logic_vector (9 downto 0);
 
 begin
 
 	-- Inverted clock
-	inv_clk <= not clk;
+	inv_clk <= '0' when rst = '1' else
+		   not clk;
 
 
 	-- Clock phase generating PLL block. Wrapper around block design
@@ -136,17 +137,16 @@ begin
 					      rst => rst);
 
 	-- Setup six ten-bit latched DDR shift registers (from DDRlatch.vhd)
-	SHIFT6x10 : for I in 0 to 5 generate
+	SHIFT_CHANNELS : for I in 0 to 5 generate
 
-		-- Data line
-		SHIFT_GEN : DDRlatch port map(D => D,
+		-- A single data line
+		SHIFT_GEN : DDRlatch port map(d => d,
 					      clk => phase_clk(I),
 					      rst => rst,
 					      latch => int_latch,
-					      Q => internal(I));
+					      q => internal(I));
 
-
-	end generate SHIFT6x10;
+	end generate SHIFT_CHANNELS;
 
 
 	-- Count to ten on the DDR clock and set the internal latch, then
@@ -160,11 +160,7 @@ begin
 	begin
 
 		-- Check reset signal, set all signals to 0
-		if(rst = '1') then
-			int_latch <= '0';
-			-- latch_sig <= '0';
-			count := 0;
-		else
+		if rst = '0' then
 
 			-- Check for rising or falling edge (rising on inv_clk
 			if rising_edge(clk) or rising_edge(inv_clk) then
@@ -185,9 +181,15 @@ begin
 					count := 0;
 				end if;
 
-			end if; -- DDR rising edge
+			end if; -- DDR edge detector
 
-		end if; -- rst else
+		else
+
+			int_latch <= '0';
+			out_latch <= '0';
+			count := 0;
+
+		end if; -- rst
 
 	end process; -- COUNT_PROC
 
@@ -206,7 +208,7 @@ begin
 	end generate COMPARE;
 
 
-	-- Select the right clock based on the value of /clk_sel/
+	-- Select the right clock based on the value of clk_sel
 	FINAL_SELECTION : clock_select port map (clk_sel => clk_sel,
 						 train_en => train_en,
 						 rst => rst,
@@ -219,9 +221,8 @@ begin
 		 internal_shifted(clk_choice);
 		 -- to_stdlogicvector(to_bitvector(internal(clk_choice)) rol conv_integer(shift_sel(clk_choice)));
 
-
 	-- Trim the 2 LSBs for the final latched output
-	Q <= qtemp (9 downto 2);
-
+	q <= (others => '0') when rst = '1' else
+	     qtemp (9 downto 2);
 
 end Behavioral;

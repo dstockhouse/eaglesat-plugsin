@@ -42,8 +42,8 @@ architecture Behavioral of gap_counter is
 begin
 
 	COUNTER : bit_sum port map (bits => int_gaps,
-			  rst => rst,
-			  count => count);
+				    rst => rst,
+				    count => count);
 
 	int_gaps(0) <= '0' when rst = '1' else
 		       '1' when (bits(0) = '1' and bits(5) = '0') else
