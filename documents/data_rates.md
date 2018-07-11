@@ -22,19 +22,19 @@ The flux of radiation through the sensor is the product of the total flux
 density of radiation and the area of the sensor. We can use some dimensional
 analysis to find flux through the sensor.
 
-*flux* [particles/s] = *flux density* [particles/m^2\*s] * *area* [m^2]
+*flux* [particles/s] = *flux density* [particles/m<sup>2</sup>\*s] * *area* [m<sup>2</sup>]
 
 The currently selected flight sensor will be the CMV50000, which has a sensing
 area of 
 
-*area* = 41.0mm * 32.7mm = 1340.7mm^2 = 1.34e-3 m^2
+*area* = 41.0mm * 32.7mm = 1340.7mm<sup>2</sup> = 1.34e-3 m<sup>2</sup>
 
 A ballpark, perhaps best case scenario, for flux density is 1
-particle/cm^2\*s. That is, every square centimeter of space has on
+particle/cm<sup>2</sup>\*s. That is, every square centimeter of space has on
 average one particle pass through each second. If we use this value as the
 expected flux density, we find the flux of particles through the sensor.
 
-*flux* = 10000 particles/m^2\*s * 1.34e-3 m^2 = 13.4 particles/s
+*flux* = 10000 particles/m<sup>2</sup>\*s * 1.34e-3 m<sup>2</sup> = 13.4 particles/s
 
 This means every second we should expect to see on average 13.4 particles pass
 through the sensor. Again, this is all assuming a possibly very high estimate
