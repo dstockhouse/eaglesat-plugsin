@@ -2,7 +2,7 @@
 
 Part of the process of designing the payload and subsystems to service it
 involves determining what the payload requires of the subsystems beneath it
-(this idea is discussed more in *requirements.md*). This document is dedicated
+(this idea is discussed more in **requirements.md**). This document is dedicated
 to a discussion of the size of data that will be produced by the Cosmic Ray
 Payload while conducting science in orbit, particularly to determine what
 communication requirements there exist for data rates.
@@ -22,36 +22,26 @@ The flux of radiation through the sensor is the product of the total flux
 density of radiation and the area of the sensor. We can use some dimensional
 analysis to find flux through the sensor.
 
-\begin{equation}
-	flux [\frac{particles}{s}] = flux density [\frac{particles}{m^2*s}] *
-	area [m^2]
-\end{equation}
+*flux* [particles/s] = *flux density* [particles/m^2\*s] * *area* [m^2]
 
 The currently selected flight sensor will be the CMV50000, which has a sensing
 area of 
 
-\begin{equation}
-	area = 41.0mm * 32.7mm = 1340.7mm^2 = 1.34e-3 m^2
-\end{equation}
+*area* = 41.0mm * 32.7mm = 1340.7mm^2 = 1.34e-3 m^2
 
 A ballpark, perhaps best case scenario, for flux density is 1
-\frac{particle}{cm^2\*s}. That is, every square centimeter of space has on
+particle/cm^2\*s. That is, every square centimeter of space has on
 average one particle pass through each second. If we use this value as the
 expected flux density, we find the flux of particles through the sensor.
 
-\begin{equation}
-	flux = 10000 \frac{particles}{m^2*s} * 1.34e-3 m^2 = 13.4
-	\frac{particles}{s}
-\end{equation}
+*flux* = 10000 particles/m^2\*s * 1.34e-3 m^2 = 13.4 particles/s
 
 This means every second we should expect to see on average 13.4 particles pass
 through the sensor. Again, this is all assuming a possibly very high estimate
 of radiation flux density. The current design involves 5-second exposures, so
 we should expect each exposure to contain on average
 
-\begin{equation}
-	13.4 \frac{particles}{s} * 5 s = 67 particles
-\end{equation}
+13.4 particles/s * 5 s = 67 particles
 
 Again, this value could be a gross overestimate. The issue is that until we know
 an accurate radiation flux density, a quantity determined by the amount of
@@ -60,7 +50,7 @@ difficult to find a number we believe to be a proper estimate.
 
 Now, this number also assumes a static exposure time. It would be possible to
 dynamically alter the exposure time to adjust the level of saturation in the
-images. We could fine tune the exposure time to give us a desirable tradeoff
+images. We could fine tune the exposure time to give us a desirable trade-off
 between saturation. Lower saturation would arguably be better, to reduce risk of
 event intersections or mismatching events on one sensor plane with the other,
 while the constant overhead involved with finishing an exposure and reading out
@@ -84,13 +74,37 @@ transmitted to the ground. It would be impractical to send the entire images to
 the ground, two 50MP images with 67 interesting points each would be
 impractical. Instead, there are two possibilities. 
 
+#### Regions of Interest
+
 The first, easier to implement but likely requiring a higher data rate, would be
 to crop regions of interest from every capture to send to the ground in raw
 image format. There would still be raw image data on the ground for the
 physicists to use in studies, but the satellite wouldn't have to transmit entire
 large images. Instead, the information sent to the ground would include:
 * Timestamp of when the image was captured
+* Orientation of the spacecraft during the exposure
 * Exposure duration (if exposure duration is dynamic)
+* Cropped regions of interest where the OBC detected candidate radiation events,
+  along with location in the frame each event was found. This way the image can
+be effectively recreated on the ground assuming that the space between events is
+only noise.
+
+Another estimate we need to make is how large each event appears in the frame,
+that is, how many pixels are needed to store each event. Some studies on the
+ground looking for radiation with an image sensor of similar pixel size show
+events of approximately 12 pixels by 12 pixels, with some buffer around the
+edges to ensure that all the relevant data is included. So each event takes up
+144 pixels, and each pixel is stored with one byte, and there are 67 events per
+capture, and there are two sensing planes, so the amount of data produced per
+capture is
+
+144 px/event * 1 byte/px * 67 events/sensor * 2 sensors = 19,296 bytes = 18.8 kB
+
+#### Complete Software Analysis
+
+The second possibility would be designing software on the OBC to detect,
+analyze, and characterize radiation events completely, without ever sending raw
+data to the ground.
 
 ### Contact
 
