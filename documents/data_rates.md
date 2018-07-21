@@ -22,19 +22,19 @@ The flux of radiation through the sensor is the product of the total flux
 density of radiation and the area of the sensor. We can use some dimensional
 analysis to find flux through the sensor.
 
-*flux* [particles/s] = *flux density* [particles/m<sup>2</sup>\*s] * *area* [m<sup>2</sup>]
+*flux [particles/s] = flux density [particles/m<sup>2</sup>\*s] * area [m<sup>2</sup>]*
 
 The currently selected flight sensor will be the CMV50000, which has a sensing
 area of 
 
-*area* = 41.0mm * 32.7mm = 1340.7mm<sup>2</sup> = 1.34e-3 m<sup>2</sup>
+*area = 41.0mm * 32.7mm = 1340.7mm<sup>2</sup> = 1.34e-3 m<sup>2</sup>*
 
 A ballpark, perhaps best case scenario, for flux density is 1
 particle/cm<sup>2</sup>\*s. That is, every square centimeter of space has on
 average one particle pass through each second. If we use this value as the
 expected flux density, we find the flux of particles through the sensor.
 
-*flux* = 10000 particles/m<sup>2</sup>\*s * 1.34e-3 m<sup>2</sup> = 13.4 particles/s
+*flux = 10000 particles/m<sup>2</sup>\*s * 1.34e-3 m<sup>2</sup> = 13.4 particles/s*
 
 This means every second we should expect to see on average 13.4 particles pass
 through the sensor. Again, this is all assuming a possibly very high estimate
@@ -71,8 +71,8 @@ of low-volume data or slower output of higher-volume data.
 
 The next set of variables are related to how the information is stored and
 transmitted to the ground. It would be impractical to send the entire images to
-the ground, two 50MP images with 67 interesting points each would be
-impractical. Instead, there are two possibilities. 
+the ground, two 50MP images with only 67 interesting points each would be
+wasteful. Instead, there are two possibilities. 
 
 #### Regions of Interest
 
@@ -95,16 +95,73 @@ ground looking for radiation with an image sensor of similar pixel size show
 events of approximately 12 pixels by 12 pixels, with some buffer around the
 edges to ensure that all the relevant data is included. So each event takes up
 144 pixels, and each pixel is stored with one byte, and there are 67 events per
-capture, and there are two sensing planes, so the amount of data produced per
-capture is
+capture, and there are two sensing planes, so the amount of pixel data produced
+per 5-second capture is
 
-144 px/event * 1 byte/px * 67 events/sensor * 2 sensors = 19,296 bytes = 18.8 kB
+*144 px/event * 1 byte/px * 67 events/sensor * 2 sensors = 19,296 bytes = 18.8kB*
+
+With this per-capture amount we can calculate the amount of data generated per
+orbit.
+
+*18.8kB/capture * 1 capture/5 seconds * 60 seconds/1 minute * 90 mintes/1 orbit = 20,304kB = 19.8MB*
+
+Any associated metadata will be negligible, but it might be prudent to round
+this figure up to 20MB (160Mb) to leave room for additional overhead. So in the
+worst case, the payload will produce 20MB per orbit.
 
 #### Complete Software Analysis
 
 The second possibility would be designing software on the OBC to detect,
 analyze, and characterize radiation events completely, without ever sending raw
-data to the ground.
+data to the ground. This method would require complex, physics-based software
+capable of detecting each radiation event present on each capture and
+determining the direction of travel and energy of the particle that caused the
+event. 
+
+##### Trajectory
+
+The software for determining the direction of origin of the particles would be
+built to take advantage of the fact that two sensor planes would make it
+possible to trace a line through a point on each plane and accurately determine
+the trajectory if it could determine that both points were part of the same
+event, and thus were made by the same particle. One immediately obvious
+difficulty with this notion is that it would be difficult for anyone, including
+a computer, to match each of a large number of events present on the capture to
+its corresponding point on the opposite plane. One method of alleviating this
+difficulty would be taking shorter exposures. This introduces increased overhead
+of reading out frames instead of integrating events. Another method, which the
+OBC team started considering in the fall before focusing on more pressing
+matters, is using limited information about each single event on a single plane
+to guess where the corresponding event lies on the other plane. A heavily
+saturated image would still make it difficult to find a match, but this method
+would improve the computer's ability to correctly match each point. This method
+requires much more complex software to compute non-negligible image processing
+on each image captured to determine where to look on the opposite plane. Since
+the particle events will be of such low resolution (likely 12px by 12px), it is
+not known whether the kind of image processing necessary is even possible to
+execute reliably. 
+
+Assuming all of those challenges could be overcome, we can estimate a best case
+data production value for the trajectory of each event. In this case, unlike the
+previous method, we are talking about tens rather than thousands of bytes. The
+direction of the event can be represented by the zenith and azimuth angles
+relative to some coordinate plane. This plane could be any celestial body as
+long as the software and the people on the ground are in agreement. The
+satellite will be able to most easily determine the angles with respect to its
+own orientation, or the orientation of the sensor plane. The satellite will know
+its own orientation with respect to the Earth, so either both can be sent to the
+ground with the payload data or the satellite will use the relative orientation
+of the event to determine the Earth-centric direction on its own. 
+
+##### Energy
+
+We haven't researched enough into the physics of the situation to know if it is
+even possible to determine the energy of a radiation event from the effect it
+has on the CMOS sensor. 
+
+### Capture Cadence
+
+
 
 ### Contact
 
