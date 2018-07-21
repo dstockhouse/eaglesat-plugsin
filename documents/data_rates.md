@@ -41,7 +41,7 @@ through the sensor. Again, this is all assuming a possibly very high estimate
 of radiation flux density. The current design involves 5-second exposures, so
 we should expect each exposure to contain on average
 
-13.4 particles/s * 5 s = 67 particles
+*13.4 particles/s * 5 s = 67 particles*
 
 Again, this value could be a gross overestimate. The issue is that until we know
 an accurate radiation flux density, a quantity determined by the amount of
@@ -161,7 +161,13 @@ has on the CMOS sensor.
 
 ### Capture Cadence
 
-
+An implicit assumption for all of this is that the payload will be operating
+constantly. This would make for the most complete collection of available data,
+but also for the highest volume of data to be generated. If the volume of data
+being generated is too high for the satellite to support, the payload can be
+"turned off" for periods of time during the orbit. The portion of the orbit that
+the payload is collecting data would be the fraction of these data volume
+numbers required to be budgeted for. 
 
 ### Contact
 
