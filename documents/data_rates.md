@@ -93,21 +93,28 @@ Another estimate we need to make is how large each event appears in the frame,
 that is, how many pixels are needed to store each event. Some studies on the
 ground looking for radiation with an image sensor of similar pixel size show
 events of approximately 12 pixels by 12 pixels, with some buffer around the
-edges to ensure that all the relevant data is included. So each event takes up
-144 pixels, and each pixel is stored with one byte, and there are 67 events per
-capture, and there are two sensing planes, so the amount of pixel data produced
-per 5-second capture is
+edges to ensure that all the relevant data is included. Additionally, to
+properly recreate the captured frame on the ground, the location of each cropped
+event on the frame must be included in the transmission. The location of the
+events on the frame are represented by the pixel coordinates of some
+predetermined reference point, say the top left corner of the cropped region.
+The CMV50000 image sensor has a resolution of 7920x6004 pixels, so the
+coordinates of any point requires 4 bytes, a negligible amount. So each event
+takes up 144 pixels of raw image data at one byte per pixel, plus 4 bytes of
+coordinates, and there are 67 events per capture, and there are two sensing
+planes, so the amount of pixel data produced per 5-second capture is
 
-*144 px/event * 1 byte/px * 67 events/sensor * 2 sensors = 19,296 bytes = 18.8kB*
+*(144 px/event * 1 byte/px + 4 bytes/event) * 67 events/sensor * 2 sensors = 19,832 bytes = 19.4kB*
 
 With this per-capture amount we can calculate the amount of data generated per
-orbit.
+orbit (assuming the satellite is in a near ISS orbit).
 
-*18.8kB/capture * 1 capture/5 seconds * 60 seconds/1 minute * 90 mintes/1 orbit = 20,304kB = 19.8MB*
+*19.4kB/capture * 1 capture/5 seconds * 60 seconds/1 minute * 90 mintes/1 orbit = 20,916kB = 20.4MB*
 
-Any associated metadata will be negligible, but it might be prudent to round
-this figure up to 20MB (160Mb) to leave room for additional overhead. So in the
-worst case, the payload will produce 20MB per orbit.
+This is a rough first order approximation, and there are plenty of necessary
+items not considered here, so it might be acceptable to round the figure to 24MB
+(192Mb). So in the worst case, the payload will produce 24MB per orbit, subject
+to the above assumptions.
 
 #### Complete Software Analysis
 
@@ -151,13 +158,45 @@ satellite will be able to most easily determine the angles with respect to its
 own orientation, or the orientation of the sensor plane. The satellite will know
 its own orientation with respect to the Earth, so either both can be sent to the
 ground with the payload data or the satellite will use the relative orientation
-of the event to determine the Earth-centric direction on its own. 
+of the event to determine the Earth-centric direction on its own. In either
+case, the per-event volume of data produced will be similarly small. It would be
+simplest to represent each angle with a single-precision floating-point number,
+with another float for the uncertainty in the measurement, which will surely not
+be negligible. So for 2 angles, 2 floats for an angle, and 4 bytes for a
+float, it would take 16 bytes to represent the trajectory of each event.
 
 ##### Energy
 
 We haven't researched enough into the physics of the situation to know if it is
-even possible to determine the energy of a radiation event from the effect it
-has on the CMOS sensor. 
+even possible to reliably determine the energy of a radiation event from the
+effect it has on the CMOS sensor.
+
+If it is possible for the satellite to autonomously determine the energy of each
+radiation event, the amount of data produced need only be very minimal. Similar
+to the above, a single-precision floating-point number can be used to represent
+the magnitude of the energy and another to represent the uncertainty in that
+quantity. So 2 bytes for the energy of the event.
+
+In the more likely case that it is infeasible to reliably calculate the event's
+energy using software alone, some representation of the magnitude of the event
+can be stored and sent to Earth instead. Again, the physics hasn't been fully
+researched, but it seems likely that there is a signature of the energy of the
+event in either the size of spread of activated pixels of the event or the
+magnitude of brightness of the event pixels as a whole.
+
+*(144 px/event * 1 byte/px + 4 bytes/event) * 67 events/sensor * 2 sensors = 19,832 bytes = 19.4kB*
+
+With this per-capture amount we can calculate the amount of data generated per
+orbit (assuming the satellite is in a near ISS orbit).
+
+*19.4kB/capture * 1 capture/5 seconds * 60 seconds/1 minute * 90 mintes/1 orbit = 20,916kB = 20.4MB*
+
+This is a rough first order approximation, and there are plenty of necessary
+items not considered here, so it might be acceptable to round the figure to 24MB
+(192Mb). So in the worst case, the payload will produce 24MB per orbit, subject
+to the above assumptions.
+
+
 
 ### Capture Cadence
 
