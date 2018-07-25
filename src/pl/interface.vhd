@@ -67,7 +67,7 @@ architecture Behavioral of interface is
 		Port ( clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
 		       clk_out : out STD_LOGIC_VECTOR ( 5 downto 0 );
-		       locked : out STD_LOGIC;);
+		       locked : out STD_LOGIC);
 	end component;
 
 	component match is
@@ -131,10 +131,10 @@ begin
 
 
 	-- Clock phase generating PLL block. Wrapper around block design
-	PLL_INST : PLL_phase_wrapper port map(clk_in => clk,
-					      clk_out => phase_clk,
-					      locked => pll_locked,
-					      rst => rst);
+	PLL_INST : pll_wrapper port map(clk => clk,
+					rst => rst,
+					clk_out => phase_clk,
+					locked => pll_locked);
 
 	-- Setup six ten-bit latched DDR shift registers (from DDRlatch.vhd)
 	SHIFT_CHANNELS : for I in 0 to 5 generate

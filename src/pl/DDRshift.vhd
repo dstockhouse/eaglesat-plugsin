@@ -51,17 +51,17 @@ begin
 					 d_falling => int_fall,
 					 clkout => int_clk);
 
-	internal(9) <= (others => '0') when rst = '1' else
+	internal(9) <= '0' when rst = '1' else
 		       int_fall when rising_edge(int_clk);
-	internal(8) <= (others => '0') when rst = '1' else
+	internal(8) <= '0' when rst = '1' else
 		       int_rise when rising_edge(int_clk);
 
 	-- Create 5 steps for the DDR shift register
 	SHIFT_GEN : for I in 0 to 3 generate
 
-		internal((2*I) + 1) <= (others => '0') when rst = '1' else
+		internal((2*I) + 1) <= '0' when rst = '1' else
 			               internal((2*(I + 1)) + 1) when rising_edge(int_clk);
-		internal(2*I) <= (others => '0') when rst = '1' else
+		internal(2*I) <= '0' when rst = '1' else
 				 internal(2*(I + 1)) when rising_edge(int_clk);
 
 	end generate SHIFT_GEN;

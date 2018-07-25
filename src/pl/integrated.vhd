@@ -184,7 +184,6 @@ begin
 
 			int_d1 <= (others => (others => '0'));
 			int_d2 <= (others => (others => '0'));
-			int_ctl <= (others => (others => '0'));
 			latch_counter := 0;
 
 		end if; -- rst
