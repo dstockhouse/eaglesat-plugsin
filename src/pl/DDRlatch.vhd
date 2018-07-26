@@ -107,4 +107,6 @@ begin
 
 		end if; -- rst else clock edge
 
+	end process;
+
 end Behavioral;
