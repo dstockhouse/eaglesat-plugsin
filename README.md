@@ -49,6 +49,9 @@ Another reason for the necessity of Vivado is that we use intellectual property
 us to generate on our own. Specifically, there are three IP blocks we have need
 of so far: a clock generator, phase-locked loop (PLL), and FIFO buffer.
 
+For testing and debugging smaller modules that do not require Vivado IP, 
+[GHDL](https://github.com/ghdl/ghdl) is a workable command-line VHDL simulator.
+
 ## TODO
 
 * The FPGA configuration is incomplete. While the LVDS interface to the image
@@ -70,7 +73,7 @@ high-tolerance SPI slave, but the camera's SPI interface may be more particular
 about clock timing and require a dedicated hardware solution. If nothing else,
 it needs to be investigated further.
 
-### Contact
+## Contact
 
 Hilly Paige, Project Manager  
 [paigeh@my.erau.edu](mailto:paigeh@my.erau.edu)
