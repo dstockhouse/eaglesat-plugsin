@@ -42,15 +42,19 @@ with hundreds of files unnecessary to be shared all the time. It's possible in
 Vivado to use source files from a directory outside the project directory
 without copying the files into the project directory and modifying local copies
 instead of the repository source files (as a check box in the source addition
-dialog). Directory names of the form "vivado\*/" will be ignored by git. 
+dialog). Directory names of the form **vivado\*/** will be ignored by git. 
 
 Another reason for the necessity of Vivado is that we use intellectual property
 (IP) blocks included with Vivado that would be difficult and not as robust for
 us to generate on our own. Specifically, there are three IP blocks we have need
 of so far: a clock generator, phase-locked loop (PLL), and FIFO buffer.
 
-For testing and debugging smaller modules that do not require Vivado IP, 
+For testing and debugging smaller modules that do not require Vivado IP,
 [GHDL](https://github.com/ghdl/ghdl) is a workable command-line VHDL simulator.
+If you are running GHDL simulations, keep the testbench VHDL files in the
+directory **testbench**, but copy the files you are actively running simulations
+on into a directory called **ghdl_tb** to prevent cluttering the main workspace
+with GHDL generated files.
 
 ## TODO
 
