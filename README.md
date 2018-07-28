@@ -54,7 +54,14 @@ For testing and debugging smaller modules that do not require Vivado IP,
 If you are running GHDL simulations, keep the testbench VHDL files in the
 directory **testbench**, but copy the files you are actively running simulations
 on into a directory called **ghdl_tb** to prevent cluttering the main workspace
-with GHDL generated files.
+with GHDL generated files. If GHDL is installed properly, the process for
+creating and running a VHDL simulation is as follows:
+
+```
+install_dir/bin/ghdl -a --ieee=synopsys testbench.vhd
+install_dir/bin/ghdl -e --ieee=synopsys testbench
+install_dir/bin/ghdl -r --ieee=synopsys testbench
+```
 
 ## TODO
 
