@@ -3,12 +3,13 @@
 --	DDRshift.vhd
 --
 -- Description:
---	A dual data rate (DDR) 10-bit shift register
+--	A dual data rate (DDR) shift register, the bit length is an even generic
+--	quantity.
 --
 -- Author:
 --	David Stockhouse & Sam Janoff
 --
--- Revision 1.3
+-- Revision 1.4
 -- Last edited: 7/28/18
 ------------------------------------------------------------------------------
 
@@ -63,7 +64,7 @@ begin
 			internal <= (others => '0');
 
 		-- Rising edge on the internal clock
-		elsif clk'EVENT and clk = '1' then
+		elsif clk'EVENT and clk = '0' then
 
 			-- MSBs
 			internal(bits-1) <= int_fall;

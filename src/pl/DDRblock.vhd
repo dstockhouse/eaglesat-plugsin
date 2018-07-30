@@ -11,7 +11,7 @@
 -- Author:
 --	David Stockhouse & Sam Janoff
 --
--- Revision 1.3
+-- Revision 1.4
 -- Last edited: 7/28/18
 ------------------------------------------------------------------------------
 
@@ -57,9 +57,8 @@ begin
 		-- Rising edge 
 		elsif clk'EVENT and clk = '1' then
 
-			q_rising <= d;
+			buf_rising <= d;
 
-			q_falling <= buf_falling;
 
 		-- Falling edge
 		-- Tracking both a rising and falling edge is possibly not
@@ -67,7 +66,8 @@ begin
 		-- elsif inv_clk'EVENT and inv_clk = '1' then
 		elsif clk'EVENT and clk = '0' then
 
-			buf_falling <= d;
+			q_falling <= d;
+			q_rising <= buf_rising;
 
 		end if; -- rst/clk
 
