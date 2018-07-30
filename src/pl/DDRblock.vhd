@@ -24,8 +24,8 @@ entity DDRblock is
 	Port ( d : in STD_LOGIC;
 	       clk : in STD_LOGIC;
 	       rst : in STD_LOGIC;
-	       d_rising : out STD_LOGIC;
-	       d_falling : out STD_LOGIC;
+	       q_rising : out STD_LOGIC;
+	       q_falling : out STD_LOGIC;
 	       clkout : out STD_LOGIC);
 end DDRblock;
 
@@ -33,14 +33,14 @@ architecture Behavioral of DDRblock is
 
 	-- Inverted clock signal and internal signal between the falling edge
 	-- DFF and the relatching DFF
-	signal inv_clk : std_logic;
+	-- signal inv_clk : std_logic;
 	signal buf_rising, buf_falling, buf_falling_relatched : std_logic := '0';
 
 begin
 
 	-- Inverse clock
-	inv_clk <= '0' when rst = '1' else
-		   not clk;
+--	inv_clk <= '0' when rst = '1' else
+--		   not clk;
 
 	-- Output clock is the same as the input clock
 	clkout <= '0' when rst = '1' else
@@ -57,13 +57,17 @@ begin
 		-- Rising edge 
 		elsif clk'EVENT and clk = '1' then
 
-			d_rising <= buf_rising;
+			q_rising <= buf_rising;
 			buf_rising <= d;
 
-			d_falling <= buf_falling_relatched;
+			q_falling <= buf_falling_relatched;
 			buf_falling_relatched <= buf_falling;
 
-		elsif inv_clk'EVENT and inv_clk = '1' then
+		-- Falling edge
+		-- Tracking both a rising and falling edge is possibly not
+		-- Synthesizable, so the inverse clock may be needed
+		-- elsif inv_clk'EVENT and inv_clk = '1' then
+		elsif clk'EVENT and clk = '0' then
 
 			buf_falling <= d;
 

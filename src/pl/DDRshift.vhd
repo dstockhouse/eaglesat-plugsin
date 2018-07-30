@@ -31,8 +31,8 @@ architecture Behavioral of DDRshift is
 		Port ( d : in STD_LOGIC;
 		       clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
-		       d_rising : out STD_LOGIC;
-		       d_falling : out STD_LOGIC;
+		       q_rising : out STD_LOGIC;
+		       q_falling : out STD_LOGIC;
 		       clkout : out STD_LOGIC);
 	end component;
 
@@ -48,8 +48,8 @@ begin
 	DDRBLOCK_INS : DDRblock port map(d => d,
 					 clk => clk,
 					 rst => rst,
-					 d_rising => int_rise,
-					 d_falling => int_fall,
+					 q_rising => int_rise,
+					 q_falling => int_fall,
 					 clkout => int_clk);
 
 	-- Process to shift serial input data 2 lines at a time to satisfy the
