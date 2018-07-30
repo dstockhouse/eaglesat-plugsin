@@ -51,8 +51,8 @@ begin
 
 		if rst = '1' then
 
-			d_rising <= '0';
-			d_falling <= '0';
+			q_rising <= '0';
+			q_falling <= '0';
 
 		-- Rising edge 
 		elsif clk'EVENT and clk = '1' then
