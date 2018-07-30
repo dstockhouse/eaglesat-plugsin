@@ -57,11 +57,9 @@ begin
 		-- Rising edge 
 		elsif clk'EVENT and clk = '1' then
 
-			q_rising <= buf_rising;
-			buf_rising <= d;
+			q_rising <= d;
 
-			q_falling <= buf_falling_relatched;
-			buf_falling_relatched <= buf_falling;
+			q_falling <= buf_falling;
 
 		-- Falling edge
 		-- Tracking both a rising and falling edge is possibly not

@@ -82,7 +82,6 @@ begin
 	end process; -- SHIFT
 
 	-- Move internal signals directly to output
-	-- q <= internal;
-	q <= (others => '0');
+	q <= internal;
 
 end Behavioral;
