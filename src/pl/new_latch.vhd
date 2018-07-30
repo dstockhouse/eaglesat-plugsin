@@ -26,7 +26,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.5
--- Last edited: 7/26/18
+-- Last edited: 7/28/18
 ------------------------------------------------------------------------------
 
 
@@ -57,14 +57,14 @@ architecture Behavioral of new_latch is
 
 	------ External component declarations ------
 
-	component DDRlatch is
-		Port ( d : in STD_LOGIC;
-		       latch : in STD_LOGIC;
-		       clk : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       q : out STD_LOGIC_VECTOR (9 downto 0));
-	end component;
-
+-- 	component DDRlatch is
+-- 		Port ( d : in STD_LOGIC;
+-- 		       latch : in STD_LOGIC;
+-- 		       clk : in STD_LOGIC;
+-- 		       rst : in STD_LOGIC;
+-- 		       q : out STD_LOGIC_VECTOR (9 downto 0));
+-- 	end component;
+-- 
 -- 	component pll_wrapper is
 -- 		Port ( clk : in STD_LOGIC;
 -- 		       rst : in STD_LOGIC;
@@ -134,9 +134,9 @@ architecture Behavioral of new_latch is
 	-- qtemp is the 10-bit output latched from the serial input line
 	signal qtemp : std_logic_vector (9 downto 0);
 
-	signal int_q1, int_q2, int_ctl : std_logic_vector (59 downto 0);
+	signal int_q1, int_q2, int_ctl : std_logic_vector (29 downto 0);
 	signal offset1, offset2, offset_ctl : integer := 0;
-	signal int_train : boolean := false;
+	signal int_train : std_logic := '1';
 
 begin
 
@@ -191,7 +191,7 @@ begin
 		-- Rising edge of pix_clk
 		elsif pix_clk'EVENT and pix_clk = '1' then
 
-			if int_train then
+			if int_train = '1' then
 
 				-- Reset position variables
 				pos1 := -1;
@@ -268,22 +268,32 @@ begin
 
 				-- Assume good lock if all positions could be determined
 				if pos1 /= -1 and pos2 /= -1 and pos_ctl /= -1 then
+
 					locked <= '1';
-					int_train <= false;
+
+					-- Because int_train is more heavily 
+					-- dependent on the switching of 
+					-- train_en in the next process, at this
+					-- point the signal is only driven
+					-- recessively
+
+					int_train <= 'L';
+
 				end if;
 
 				-- While training, output zeros
 -- 				q1 <= (others => '0');
 -- 				q2 <= (others => '0');
+				-- For debugging
 				q1 <= int_q1((pos1+9) downto (pos1+2));
 				q2 <= int_q2((pos2+9) downto (pos2+2));
 
 			else -- int_train
 
 				-- Parse the bits of the control channel 
-				dval <= int_ctl(pos_ctl+0);
-				fval <= int_ctl(pos_ctl+2);
-				lval <= int_ctl(pos_ctl+1);
+				dval := int_ctl(pos_ctl+0);
+				fval := int_ctl(pos_ctl+2);
+				lval := int_ctl(pos_ctl+1);
 
 				-- If valid data, send to output and set output
 				-- latch
@@ -308,9 +318,9 @@ begin
 	TRAIN_PROC : process (train_en)
 	begin
 		if train_en'EVENT and train_en = '1' then
-			int_train <= true;
+			int_train <= '1';
 		elsif train_en'EVENT and train_en = '0' then
-			int_train <= false;
+			int_train <= '0';
 		end if;
 	end process; -- TRAIN_PROC
 

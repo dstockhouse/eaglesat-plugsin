@@ -133,6 +133,10 @@ begin
 
 		end loop; -- SECOND_LOOP
 
+		pix_clk <= '1';
+
+		wait for 50 ns;
+
 		write (l, String'("Input:"));
 		writeline (output, l);
 
