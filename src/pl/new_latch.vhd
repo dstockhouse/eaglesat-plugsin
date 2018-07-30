@@ -38,7 +38,7 @@ use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 
-entity interface is
+entity new_latch is
 	Port ( d1 : in STD_LOGIC;
 	       d2 : in STD_LOGIC;
 	       d_ctl : in STD_LOGIC;
@@ -50,9 +50,9 @@ entity interface is
 	       locked : out STD_LOGIC := '0';
 	       q1 : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0');
 	       q2 : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
-end interface;
+end new_latch;
 
-architecture Behavioral of interface is
+architecture Behavioral of new_latch is
 
 
 	------ External component declarations ------
@@ -65,30 +65,30 @@ architecture Behavioral of interface is
 		       q : out STD_LOGIC_VECTOR (9 downto 0));
 	end component;
 
-	component pll_wrapper is
-		Port ( clk : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       clk_out : out STD_LOGIC_VECTOR ( 5 downto 0 );
-		       locked : out STD_LOGIC);
-	end component;
-
-	component match is
-		Port ( test : in STD_LOGIC_VECTOR (9 downto 0);
-		       key : in STD_LOGIC_VECTOR (9 downto 0);
-		       train_en : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       matched : out STD_LOGIC;
-		       shifted : out STD_LOGIC_VECTOR (9 downto 0);
-		       shift : out INTEGER);
-	end component;
-
-	component clock_select is
-		Port ( clk_sel : in STD_LOGIC_VECTOR (5 downto 0);
-		       train_en : in STD_LOGIC;
-		       rst : in STD_LOGIC;
-		       chosen : out integer;
-		       confident : out STD_LOGIC);
-	end component;
+-- 	component pll_wrapper is
+-- 		Port ( clk : in STD_LOGIC;
+-- 		       rst : in STD_LOGIC;
+-- 		       clk_out : out STD_LOGIC_VECTOR ( 5 downto 0 );
+-- 		       locked : out STD_LOGIC);
+-- 	end component;
+-- 
+-- 	component match is
+-- 		Port ( test : in STD_LOGIC_VECTOR (9 downto 0);
+-- 		       key : in STD_LOGIC_VECTOR (9 downto 0);
+-- 		       train_en : in STD_LOGIC;
+-- 		       rst : in STD_LOGIC;
+-- 		       matched : out STD_LOGIC;
+-- 		       shifted : out STD_LOGIC_VECTOR (9 downto 0);
+-- 		       shift : out INTEGER);
+-- 	end component;
+-- 
+-- 	component clock_select is
+-- 		Port ( clk_sel : in STD_LOGIC_VECTOR (5 downto 0);
+-- 		       train_en : in STD_LOGIC;
+-- 		       rst : in STD_LOGIC;
+-- 		       chosen : out integer;
+-- 		       confident : out STD_LOGIC);
+-- 	end component;
 
 	component DDRshift is
 		Generic ( bits : integer);
@@ -209,7 +209,7 @@ begin
 					if int_ctl((I+9) downto I) = "1000000000" then
 						pos_ctl := I;
 					end if;
-				end for;
+				end loop;
 
 				-- Determine if positioning would be closer at a
 				-- different offset
@@ -266,9 +266,17 @@ begin
 					offset_ctl <= pos_ctl;
 				end if;
 
+				-- Assume good lock if all positions could be determined
+				if pos1 /= -1 and pos2 /= -1 and pos_ctl /= -1 then
+					locked <= '1';
+					int_train <= false;
+				end if;
+
 				-- While training, output zeros
-				q1 <= (others => '0');
-				q2 <= (others => '0');
+-- 				q1 <= (others => '0');
+-- 				q2 <= (others => '0');
+				q1 <= int_q1((pos1+9) downto (pos1+2));
+				q2 <= int_q2((pos2+9) downto (pos2+2));
 
 			else -- int_train
 
@@ -297,105 +305,114 @@ begin
 
 	end process; -- FRAMING
 
-
-	-- Inverted clock
-	inv_clk <= '0' when rst = '1' else
-		   not clk;
-
-
-	-- Clock phase generating PLL block. Wrapper around block design
-	PLL_INST : pll_wrapper port map(clk => clk,
-					rst => rst,
-					clk_out => phase_clk,
-					locked => pll_locked);
-
-	-- Setup six ten-bit latched DDR shift registers (from DDRlatch.vhd)
-	SHIFT_CHANNELS : for I in 0 to 5 generate
-
-		-- A single data line
-		SHIFT_GEN : DDRlatch port map(d => d,
-					      clk => phase_clk(I),
-					      rst => rst,
-					      latch => int_latch,
-					      q => internal(I));
-
-	end generate SHIFT_CHANNELS;
-
-
-	-- Count to ten on the DDR clock and set the internal latch, then
-	-- check the internal signals to see if they match the training
-	-- data
-	COUNT_PROC : process(clk, inv_clk, rst)
-
-		-- Counter variable, initialize to 0
-		variable count : integer := 0;
-
+	TRAIN_PROC : process (train_en)
 	begin
-
-		-- Check reset signal, set all signals to 0
-		if rst = '0' then
-
-			-- Check for rising or falling edge (rising on inv_clk
-			if rising_edge(clk) or rising_edge(inv_clk) then
-
-				-- Increment counter
-				count := count + 1;
-
-				-- If latch is set, reset it
-				if(clk = '1' and int_latch = '1') then
-					int_latch <= '0';
-				end if;
-
-				-- If count reached 10, set internal latch
-				if(count >= 10) then
-					if(clk = '1') then
-						int_latch <= '1';
-					end if;
-					count := 0;
-				end if;
-
-			end if; -- DDR edge detector
-
-		else
-
-			int_latch <= '0';
-			out_latch <= '0';
-			count := 0;
-
-		end if; -- rst
-
-	end process; -- COUNT_PROC
+		if train_en'EVENT and train_en = '1' then
+			int_train <= true;
+		elsif train_en'EVENT and train_en = '0' then
+			int_train <= false;
+		end if;
+	end process; -- TRAIN_PROC
 
 
-	-- Generate the training data comparison blocks
-	COMPARE : for I in 0 to 5 generate
-
-		SHIFT_COMPARE : match port map (test => internal(I),
-						key => train,
-						train_en => train_en,
-						rst => rst,
-						matched => clk_sel(I),
-						shifted => internal_shifted(I),
-						shift => shift_sel(I));
-
-	end generate COMPARE;
-
-
-	-- Select the right clock based on the value of clk_sel
-	FINAL_SELECTION : clock_select port map (clk_sel => clk_sel,
-						 train_en => train_en,
-						 rst => rst,
-						 chosen => clk_choice,
-						 confident => locked);
-
-
-	-- Assign output to the properly selected and shifted input phase
-	qtemp <= (others => '0') when rst = '1' or (clk_choice < 0 or clk_choice > 5) else
-		 internal_shifted(clk_choice);
-		 -- to_stdlogicvector(to_bitvector(internal(clk_choice)) rol conv_integer(shift_sel(clk_choice)));
-
-	-- Trim the 2 LSBs for the final latched output
-	q <= (others => '0') when rst = '1' else
-	     qtemp (9 downto 2);
+-- 	-- Inverted clock
+-- 	inv_clk <= '0' when rst = '1' else
+-- 		   not clk;
+-- 
+-- 
+-- 	-- Clock phase generating PLL block. Wrapper around block design
+-- 	PLL_INST : pll_wrapper port map(clk => clk,
+-- 					rst => rst,
+-- 					clk_out => phase_clk,
+-- 					locked => pll_locked);
+-- 
+-- 	-- Setup six ten-bit latched DDR shift registers (from DDRlatch.vhd)
+-- 	SHIFT_CHANNELS : for I in 0 to 5 generate
+-- 
+-- 		-- A single data line
+-- 		SHIFT_GEN : DDRlatch port map(d => d,
+-- 					      clk => phase_clk(I),
+-- 					      rst => rst,
+-- 					      latch => int_latch,
+-- 					      q => internal(I));
+-- 
+-- 	end generate SHIFT_CHANNELS;
+-- 
+-- 
+-- 	-- Count to ten on the DDR clock and set the internal latch, then
+-- 	-- check the internal signals to see if they match the training
+-- 	-- data
+-- 	COUNT_PROC : process(clk, inv_clk, rst)
+-- 
+-- 		-- Counter variable, initialize to 0
+-- 		variable count : integer := 0;
+-- 
+-- 	begin
+-- 
+-- 		-- Check reset signal, set all signals to 0
+-- 		if rst = '0' then
+-- 
+-- 			-- Check for rising or falling edge (rising on inv_clk
+-- 			if rising_edge(clk) or rising_edge(inv_clk) then
+-- 
+-- 				-- Increment counter
+-- 				count := count + 1;
+-- 
+-- 				-- If latch is set, reset it
+-- 				if(clk = '1' and int_latch = '1') then
+-- 					int_latch <= '0';
+-- 				end if;
+-- 
+-- 				-- If count reached 10, set internal latch
+-- 				if(count >= 10) then
+-- 					if(clk = '1') then
+-- 						int_latch <= '1';
+-- 					end if;
+-- 					count := 0;
+-- 				end if;
+-- 
+-- 			end if; -- DDR edge detector
+-- 
+-- 		else
+-- 
+-- 			int_latch <= '0';
+-- 			out_latch <= '0';
+-- 			count := 0;
+-- 
+-- 		end if; -- rst
+-- 
+-- 	end process; -- COUNT_PROC
+-- 
+-- 
+-- 	-- Generate the training data comparison blocks
+-- 	COMPARE : for I in 0 to 5 generate
+-- 
+-- 		SHIFT_COMPARE : match port map (test => internal(I),
+-- 						key => train,
+-- 						train_en => train_en,
+-- 						rst => rst,
+-- 						matched => clk_sel(I),
+-- 						shifted => internal_shifted(I),
+-- 						shift => shift_sel(I));
+-- 
+-- 	end generate COMPARE;
+-- 
+-- 
+-- 	-- Select the right clock based on the value of clk_sel
+-- 	FINAL_SELECTION : clock_select port map (clk_sel => clk_sel,
+-- 						 train_en => train_en,
+-- 						 rst => rst,
+-- 						 chosen => clk_choice,
+-- 						 confident => locked);
+-- 
+-- 
+-- 	-- Assign output to the properly selected and shifted input phase
+-- 	qtemp <= (others => '0') when rst = '1' or (clk_choice < 0 or clk_choice > 5) else
+-- 		 internal_shifted(clk_choice);
+-- 		 -- to_stdlogicvector(to_bitvector(internal(clk_choice)) rol conv_integer(shift_sel(clk_choice)));
+-- 
+-- 	-- Trim the 2 LSBs for the final latched output
+-- 	q <= (others => '0') when rst = '1' else
+-- 	     qtemp (9 downto 2);
 
 end Behavioral;

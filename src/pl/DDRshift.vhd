@@ -22,7 +22,7 @@ entity DDRshift is
 	Port ( d : in STD_LOGIC;
 	       clk : in STD_LOGIC;
 	       rst : in STD_LOGIC;
-	       q : out STD_LOGIC_VECTOR ((bits-1) downto 0) := (others => '0'));
+	       q : out STD_LOGIC_VECTOR ((bits-1) downto 0));
 end DDRshift;
 
 architecture Behavioral of DDRshift is
@@ -40,7 +40,7 @@ architecture Behavioral of DDRshift is
 	signal int_rise, int_fall, int_clk : std_logic := '0';
 
 	-- Internal signals between D flip flops to shift the shift register
-	signal internal : std_logic_vector((bits-1) downto 0) := (others => '0');
+	signal internal : std_logic_vector((bits-1) downto 0) := (others => '1');
 
 begin
 
@@ -54,7 +54,7 @@ begin
 
 	-- Process to shift serial input data 2 lines at a time to satisfy the
 	-- DDR signals
-	SHIFT : process(int_clk, rst)
+	SHIFT : process(clk, rst)
 	begin
 
 		-- Asynchronous reset
@@ -63,7 +63,7 @@ begin
 			internal <= (others => '0');
 
 		-- Rising edge on the internal clock
-		elsif int_clk'EVENT and int_clk = '1' then
+		elsif clk'EVENT and clk = '1' then
 
 			-- MSBs
 			internal(bits-1) <= int_fall;
@@ -77,11 +77,12 @@ begin
 
 			end loop;
 
-		end if;
+		end if; -- rst/clk
 
 	end process; -- SHIFT
 
 	-- Move internal signals directly to output
-	q <= internal;
+	-- q <= internal;
+	q <= (others => '0');
 
 end Behavioral;
