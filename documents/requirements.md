@@ -35,7 +35,7 @@ The system shall...
 * communicate with and meet the needs of the Memory Degradation Experiment (MDE)
   through the Serial Peripheral Interface (SPI).
 
-### Contact
+## Contact
 
 David Stockhouse, On-Board Computer Subsystem Lead  
 [stockhod@my.erau.edu](mailto:stockhod@my.erau.edu)

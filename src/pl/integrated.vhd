@@ -12,8 +12,8 @@
 -- Author:
 --	David Stockhouse
 --
--- Revision 1.1
--- Last edited: 7/03/18
+-- Revision 1.2
+-- Last edited: 7/26/18
 ------------------------------------------------------------------------------
 
 
@@ -46,7 +46,7 @@ architecture Behavioral of integrated is
 		       pix_clk : in STD_LOGIC;
 		       clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
-		       latch_sig : out STD_LOGIC := '0';
+		       out_latch : out STD_LOGIC := '0';
 		       locked : out STD_LOGIC := '0';
 		       q : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
 	end component;
@@ -77,7 +77,7 @@ begin
 					  pix_clk => pix_clk,
 					  train_en => int_train,
 					  train => "0001010101",
-					  latch_sig => int_latch1,
+					  out_latch => int_latch1,
 					  locked => int_locked1,
 					  q => q1);
 
@@ -87,7 +87,7 @@ begin
 					  pix_clk => pix_clk,
 					  train_en => int_train,
 					  train => "0001010101",
-					  latch_sig => int_latch2,
+					  out_latch => int_latch2,
 					  locked => int_locked2,
 					  q => q2);
 
@@ -97,7 +97,7 @@ begin
 					    pix_clk => pix_clk,
 					    train_en => int_train,
 					    train => "1000000000",
-					    latch_sig => int_latch_ctl,
+					    out_latch => int_latch_ctl,
 					    locked => int_locked_ctl,
 					    q => q_ctl);
 
@@ -158,22 +158,30 @@ begin
 				if rising_edge(int_latch1) then
 					for I in 3 downto 1 loop
 						int_d1(I) <= int_d1(I-1);
+						int_d1(0) <= q1;
 					end loop;
 				end if;
 
 				if rising_edge(int_latch2) then
 					for I in 3 downto 1 loop
 						int_d2(I) <= int_d2(I-1);
+						int_d2(0) <= q2;
 					end loop;
 				end if;
 
-				if rising_edge(int_latch_ctl) and dval = '1' then
+				-- Increment counter
+				latch_counter := latch_counter + 1;
 
-					int_d1(0) <= q1;
-					int_d2(0) <= q2;
+				if latch_counter > 3 then
 
-				end if; -- Rising edge on latches while valid data on input lines
+					-- Reset counter
+					latch_counter := 0;
 
+					-- Send internal signals to output. First concatenate 32 bits together
+					out_high <= (others => '0') when rst = '1' else
+						    int_d2(3) & int_d2(2) & int_d2(1) & int_d2(0);
+					out_low <= (others => '0') when rst = '1' else
+						   int_d1(3) & int_d1(2) & int_d1(1) & int_d1(0);
 			else
 
 				latch_counter := 0;
@@ -186,14 +194,11 @@ begin
 			int_d2 <= (others => (others => '0'));
 			latch_counter := 0;
 
+			out_high <= (others => '0');
+			out_low <= (others => '0');
+
 		end if; -- rst
 
 	end process; -- LATCH_SHIFT
-
-	-- Send internal signals to output. First concatenate 32 bits together
-	out_high <= (others => '0') when rst = '1' else
-		    int_d2(3) & int_d2(2) & int_d2(1) & int_d2(0);
-	out_low <= (others => '0') when rst = '1' else
-		   int_d1(3) & int_d1(2) & int_d1(1) & int_d1(0);
 
 end Behavioral;
