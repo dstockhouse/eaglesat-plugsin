@@ -51,9 +51,9 @@ begin
 					 d_falling => int_fall,
 					 clkout => int_clk);
 
-	internal(9) <= '0' when rst = '1' else
-		       int_fall when rising_edge(int_clk);
 	internal(8) <= '0' when rst = '1' else
+		       int_fall when rising_edge(int_clk);
+	internal(9) <= '0' when rst = '1' else
 		       int_rise when rising_edge(int_clk);
 
 	-- Create 5 steps for the DDR shift register
