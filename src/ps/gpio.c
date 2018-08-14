@@ -47,8 +47,7 @@ int GPIOPinInit(int pin, char *direction) {
 
 	// Ensure direction is a valid value
 	if(strcmp(direction, GPIO_OUT) && strcmp(direction, GPIO_IN)) {
-		printf("Not a valid direction. Must be either GPIO_OUTPUT or \
-GPIO_INPUT.\n");
+		printf("%s:%d: Not a valid direction. Must be either GPIO_OUTPUT or GPIO_INPUT.\n", __FILE__, __LINE__);
 
 		return 10;
 	} // if valid direction
@@ -60,8 +59,7 @@ GPIO_INPUT.\n");
 
 		// If the directory exists, then the pin has already been
 		// initialized
-		printf("Pin %d already in use. Disable and reinitialize for \
-your own use? [y/n] ", pin); 
+		printf("Pin %d already in use. Disable and reinitialize for your own use? [y/n] ", pin); 
 
 		while(confirm < 0) {
 			do {
@@ -84,7 +82,7 @@ your own use? [y/n] ", pin);
 
 			// Deinitialize GPIO pin
 			if(GPIOPinDeInit(pin)) {
-				printf("Couldn't deinitialize pin %d.\n", pin);
+				printf("%s:%d: Couldn't deinitialize pin %d.\n", __FILE__, __LINE__, pin);
 
 				return 5;
 
@@ -92,7 +90,7 @@ your own use? [y/n] ", pin);
 
 
 		} else {
-			printf("Cannot initialize pin %d.\n", pin);
+			printf("%s:%d: Cannot initialize pin %d.\n", __FILE__, __LINE__, pin);
 			return 1;
 		} // if/else confirm
 
@@ -116,8 +114,7 @@ your own use? [y/n] ", pin);
 
 	} else {
 
-		printf("Couldn't open file \"%s\".\n",
-				GPIO_EXPORT);
+		printf("%s:%d: Couldn't open file \"%s\".\n", __FILE__, __LINE__, GPIO_EXPORT);
 
 		return 4;
 
@@ -129,7 +126,7 @@ your own use? [y/n] ", pin);
 	// Check if GPIO successfully initialized
 	if(!GPIOPinIsInit(pin)) {
 
-		printf("Couldn't initializes GPIO pin %d.\n", pin);
+		printf("%s:%d: Couldn't initializes GPIO pin %d.\n", __FILE__, __LINE__, pin);
 
 		return 5;
 
@@ -155,9 +152,8 @@ your own use? [y/n] ", pin);
 
 	} else {
 
-		printf("Couldn't open file \"%s\".\n",
-				strBuf);
-		printf("Couldn't set direction of pin %d.\n", pin);
+		printf("%s:%d: Couldn't open file \"%s\".\n", __FILE__, __LINE__, strBuf);
+		printf("%s:%d: Couldn't set direction of pin %d.\n", __FILE__, __LINE__, pin);
 
 		return 6;
 
@@ -180,7 +176,7 @@ int GPIOPinDeInit(int pin) {
 
 	// Ensure pin has already been initialized
 	if(!GPIOPinIsInit(pin)) {
-		printf("Pin %d is not initialized.\n", pin);
+		printf("%s:%d: Pin %d is not initialized.\n", __FILE__, __LINE__, pin);
 
 		// Might as well be a success
 		return 0;
@@ -208,7 +204,7 @@ int GPIOPinDeInit(int pin) {
 
 	} else {
 		// Open failed
-		printf("Couldn't open \"%s\".\n", GPIO_UNEXPORT);
+		printf("%s:%d: Couldn't open \"%s\".\n", __FILE__, __LINE__, GPIO_UNEXPORT);
 		perror("Error");
 
 		return 1;
@@ -254,7 +250,7 @@ int GPIOPinWrite(int pin, int value) {
 
 	// Ensure /pin/ has been initialized
 	if(!GPIOPinIsInit(pin)) {
-		printf("Pin %d has not been initialized.\n", pin);
+		printf("%s:%d: Pin %d has not been initialized.\n", __FILE__, __LINE__, pin);
 		return 1;
 	}
 
@@ -273,8 +269,7 @@ int GPIOPinWrite(int pin, int value) {
 
 	} else {
 
-		printf("Couldn't open file \"%s\".\n",
-				GPIO_EXPORT);
+		printf("%s:%d: Couldn't open file \"%s\".\n", __FILE__, __LINE__, GPIO_EXPORT);
 
 		return 4;
 
@@ -297,7 +292,7 @@ int GPIOPinRead(int pin) {
 
 	// Ensure /pin/ has been initialized
 	if(!GPIOPinIsInit(pin)) {
-		printf("Pin %d has not been initialized.\n", pin);
+		printf("%s:%d: Pin %d has not been initialized.\n", __FILE__, __LINE__, pin);
 		return 1;
 	}
 
@@ -317,8 +312,7 @@ int GPIOPinRead(int pin) {
 
 	} else {
 
-		printf("Couldn't open file \"%s\".\n",
-				GPIO_EXPORT);
+		printf("%s:%d: Couldn't open file \"%s\".\n", __FILE__, __LINE__, GPIO_EXPORT);
 
 		return 4;
 
@@ -338,7 +332,7 @@ int GPIOPinPulse(int pin) {
 
 	// Ensure /pin/ has been initialized
 	if(!GPIOPinIsInit(pin)) {
-		printf("Pin %d has not been initialized.\n", pin);
+		printf("%s:%d: Pin %d has not been initialized.\n", __FILE__, __LINE__, pin);
 		return 1;
 	}
 
@@ -370,8 +364,7 @@ int GPIOPinPulse(int pin) {
 
 	} else {
 
-		printf("Couldn't open file \"%s\".\n",
-				GPIO_EXPORT);
+		printf("%s:%d: Couldn't open file \"%s\".\n", __FILE__, __LINE__, GPIO_EXPORT);
 
 		return 4;
 
@@ -412,8 +405,7 @@ int directoryExists(char *dirname) {
 		} else if(errno == EACCES) {
 
 			// Permission denied
-			printf("Couldn't access \"%s\": Permission denied\n.",
-					dirname);
+			printf("%s:%d: Couldn't access \"%s\": Permission denied\n.", __FILE__, __LINE__, dirname);
 			return -2;
 
 		} // if not exist / else if no permissions

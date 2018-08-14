@@ -31,11 +31,15 @@ int main() {
 
 	// Initialize the sensor
 	spiInit();
-	registerInit();
+	// registerInit();
 
 	/**** Will have image capture code ****/
+	// Read out a frame with 5 second exposure
+	printf("%s:%d: Starting read...\n", __FILE__, __LINE__);
+	frameRead(1);
 
 	spiDeInit();
+	
 
 } // Function main()
 

@@ -35,13 +35,14 @@
 
 /**** Function frameRead ****
  * Communicate with the sensor to read out one frame and store it in a new
- * image file using generateFilename(). /exposure/ is the exposure time in
+ * image file using generateFilename(). Input is the exposure time in
  * seconds.
  */
 int frameRead(int exposure) {
 
-	char filename[FILENAME_SIZE];
+	char capture_filename[FILENAME_SIZE];
 	int bytesInHigh = 0, bytesInLow = 0;
+	int readContinue;
 
 	// Buffer for pixel data
 	unsigned char pixelBuf[APS_ROWS*APS_COLS];
@@ -49,6 +50,10 @@ int frameRead(int exposure) {
 	// open() file descriptors
 	int dataHigh, dataLow, outputFile;
 
+	// Initialize all GPIO ports to be used
+	printf("%s:%d: Initializing GPIO pins.\n", __FILE__, __LINE__);
+	GPIOPinInit(T_EXP1, GPIO_OUT);
+	GPIOPinInit(FRAME_REQ, GPIO_OUT);
 
 	// Ensure that exposure is a valid number, if not set it to default 
 	// to 15 seconds
@@ -56,22 +61,31 @@ int frameRead(int exposure) {
 		exposure = 15;
 	}
 
+	// Come up with name for the capture
+	printf("%s:%d: Generating capture filename\n", __FILE__, __LINE__);
+	generateFilename(capture_filename, FILENAME_SIZE, exposure);
+	printf("\tCapture file is '%s'\n", capture_filename);
+
 	// Begin exposure
+	printf("%s:%d: Pulsing T_EXP1\n", __FILE__, __LINE__);
 	GPIOPinPulse(T_EXP1);
 
-	// Delay for /exposure/
+	// Delay for exposure time
+	printf("%s:%d: Sleep...\n", __FILE__, __LINE__);
 	sleep(exposure);
 
 	// End exposure, request frame
+	printf("%s:%d: Pulsing FRAME_REQ\n", __FILE__, __LINE__);
 	GPIOPinPulse(FRAME_REQ);
 
-	// Wait frame overhead time, 20ms
+	// Wait maximum frame overhead time, 20ms, readout will start automatically
 	usleep(20000);
 
 
 	/*** Start readout ***/
 
 	// Open high order xillybus upstream file
+	printf("%s:%d: Opening pixel file high\n", __FILE__, __LINE__);
 	dataHigh = open(PIXEL_FILE_HIGH, O_RDONLY);
 
 	// Ensure file opened correctly
@@ -85,13 +99,16 @@ int frameRead(int exposure) {
 
 	/*** Read until EOF on h/l ***/
 
-	while(bytesInHigh < (APS_COLS * APS_ROWS / 2) - 1) {
+	readContinue = 1;
+	while(bytesInHigh < (APS_COLS * APS_ROWS / 2) - 1 && readContinue) {
 
 		int newBytes;
+		int pass = 0;
 
 		// Read high bytes
 		newBytes = read(dataHigh, 
 				&pixelBuf[APS_ROWS / 2], APS_COLS * APS_ROWS / 2);
+		printf("\tPass %d: newBytes = %d\n", pass, newBytes);
 
 		// Ensure read was successful
 		if (newBytes < 0) {
@@ -111,13 +128,18 @@ int frameRead(int exposure) {
 		// Check if EOF reached before any data
 		if (newBytes == 0) {
 			printf("Reached read EOF before data for high order pixels.\n");
+			readContinue = 0;
 
 		} // if read succeeded but read nothing
+
+		// Debugging counter
+		pass++;
 
 	} // while bytes left to read
 
 
 	// Open low order xillybus upstream file
+	printf("%s:%d: Opening pixel file low\n", __FILE__, __LINE__);
 	dataLow = open(PIXEL_FILE_LOW, O_RDONLY);
 
 	// Ensure file opened successfully
@@ -128,7 +150,8 @@ int frameRead(int exposure) {
 
 	} // if dataLow not opened
 
-	while(bytesInLow < (APS_COLS * APS_ROWS / 2) - 1) {
+	readContinue = 1;
+	while(bytesInLow < (APS_COLS * APS_ROWS / 2) - 1 && readContinue) {
 
 		int newBytes;
 
@@ -153,6 +176,7 @@ int frameRead(int exposure) {
 		// Check if EOF reached before any data
 		if (newBytes == 0) {
 			printf("Reached read EOF before data for low order pixels.\n");
+			readContinue = 0;
 
 		} // if read succeeded but read nothing
 
@@ -191,11 +215,9 @@ int frameRead(int exposure) {
 
 	/*** Write raw data to SD card file ***/
 
-	// Come up with filename
-	generateFilename(filename, FILENAME_SIZE, exposure);
-
-	// Attempt to open file
-	outputFile = open(filename, O_WRONLY | O_CREAT, 0644);
+	// Attempt to open file to store image data
+	printf("%s:%d: Opening output file\n", __FILE__, __LINE__);
+	outputFile = open(capture_filename, O_WRONLY | O_CREAT, 0644);
 
 	// Ensure file was opened properly
 	if (outputFile < 0) {
@@ -220,7 +242,7 @@ int frameRead(int exposure) {
 		// Check if allwrite() succeeded
 		if(returnVal) {
 			printf("Successfully wrote %d bytes to %s.\n", 
-				returnVal, filename);
+				returnVal, capture_filename);
 		}
 
 	} // if/else outputFile opened successfully
@@ -233,6 +255,9 @@ int frameRead(int exposure) {
 
 	/****** End optional ******/
 
+	// De-initialize all GPIO ports to be used
+	GPIOPinDeInit(T_EXP1);
+	GPIOPinDeInit(FRAME_REQ);
 
 	// If it made it this far, it must have succeeded at least in part
 	return 0;
