@@ -12,7 +12,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.4
--- Last edited: 7/28/18
+-- Last edited: 8/13/18
 ------------------------------------------------------------------------------
 
 
@@ -33,20 +33,20 @@ architecture Behavioral of DDRblock is
 
 	-- Inverted clock signal and internal signal between the falling edge
 	-- DFF and the relatching DFF
-	-- signal inv_clk : std_logic;
+	signal inv_clk : std_logic;
 	signal buf_rising, buf_falling, buf_falling_relatched : std_logic := '0';
 
 begin
 
 	-- Inverse clock
---	inv_clk <= '0' when rst = '1' else
---		   not clk;
+	inv_clk <= '0' when rst = '1' else
+		   not clk;
 
 	-- Output clock is the same as the input clock
 	clkout <= '0' when rst = '1' else
 		  clk;
 
-	LATCH : process(clk, rst)
+	LATCH : process(clk, inv_clk, rst)
 	begin
 
 		if rst = '1' then
@@ -54,22 +54,23 @@ begin
 			q_rising <= '0';
 			q_falling <= '0';
 
-		-- Rising edge 
-		elsif clk'EVENT and clk = '1' then
+		else
+			-- Rising edge 
+			if clk'EVENT and clk = '1' then
 
-			buf_rising <= d;
+				buf_rising <= d;
 
+			end if; -- rising edge
 
-		-- Falling edge
-		-- Tracking both a rising and falling edge is possibly not
-		-- Synthesizable, so the inverse clock may be needed
-		-- elsif inv_clk'EVENT and inv_clk = '1' then
-		elsif clk'EVENT and clk = '0' then
+			-- Falling edge
+			if clk'EVENT and clk = '0' then
 
-			q_falling <= d;
-			q_rising <= buf_rising;
+				q_falling <= d;
+				q_rising <= buf_rising;
 
-		end if; -- rst/clk
+			end if; -- falling edge
+
+		end if; -- rst
 
 	end process; -- LATCH
 

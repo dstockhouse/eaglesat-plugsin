@@ -26,7 +26,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.5
--- Last edited: 7/28/18
+-- Last edited: 8/13/18
 ------------------------------------------------------------------------------
 
 
@@ -78,6 +78,9 @@ architecture Behavioral of new_latch is
 	-- Internal signal for whether or not the device is currently training
 	signal int_train : std_logic := '1';
 
+	-- Inverted pixel clock, to detect falling edge
+	signal inv_pix_clk : std_logic := '0';
+
 begin
 
 	-- Instances of the DDRshift component
@@ -105,7 +108,8 @@ begin
 
 	-- Process to determine where the correct position of each pixel data in
 	-- the longer buffer whenever the pixel clock rising edge occurs
-	FRAMING : process(pix_clk, rst)
+	FRAMING : process(pix_clk, inv_pix_clk, rst)
+
 		-- Starting positions in each buffer
 		variable pos1, pos2, pos_ctl : integer;
 		-- Difference between positions to determine whether to
@@ -113,6 +117,7 @@ begin
 		variable diff_1_2, diff_1_ctl, diff_2_ctl : integer;
 		-- Bits in the control channel
 		variable dval, fval, lval : std_logic;
+
 	begin
 
 		if rst = '1' then
@@ -136,144 +141,154 @@ begin
 			q2 <= (others => '0');
 			out_latch <= '0';
 
-		-- Rising edge of pix_clk
-		elsif pix_clk'EVENT and pix_clk = '1' then
+		else
 
-			if int_train = '1' then
+			-- Rising edge of pix_clk
+			if pix_clk'EVENT and pix_clk = '1' then
 
-				-- Reset position variables so it can be
-				-- determined whether or not they have been
-				-- properly set later
-				pos1 := -1;
-				pos2 := -1;
-				pos_ctl := -1;
+				if int_train = '1' then
 
-				-- Determine first possible frame for each signal
-				INIT_FRAME_LOOP : for I in 0 to 9 loop
-					-- Test each signal buffer against it's
-					-- training sequence
-					if int_q1((I+9) downto I) = "0001010101" then
-						pos1 := I;
+					-- Reset position variables so it can be
+					-- determined whether or not they have been
+					-- properly set later
+					pos1 := -1;
+					pos2 := -1;
+					pos_ctl := -1;
+
+					-- Determine first possible frame for each signal
+					INIT_FRAME_LOOP : for I in 0 to 9 loop
+						-- Test each signal buffer against it's
+						-- training sequence
+						if int_q1((I+9) downto I) = "0001010101" then
+							pos1 := I;
+						end if;
+						if int_q2((I+9) downto I) = "0001010101" then
+							pos2 := I;
+						end if;
+						if int_ctl((I+9) downto I) = "1000000000" then
+							pos_ctl := I;
+						end if;
+					end loop; -- INIT_FRAME_LOOP
+
+					-- Determine if positioning would be closer at a
+					-- different offset
+					if pos1 /= -1 and pos2 /= -1 then
+						diff_1_2 := pos1 - pos2;
+						if diff_1_2 < 0 then
+							diff_1_2 := 0-diff_1_2;
+						end if;
+					else
+						diff_1_2 := -1;
 					end if;
-					if int_q2((I+9) downto I) = "0001010101" then
-						pos2 := I;
+					if pos1 /= -1 and pos_ctl /= -1 then
+						diff_1_ctl := pos1 - pos_ctl;
+						if diff_1_ctl < 0 then
+							diff_1_ctl := 0-diff_1_ctl;
+						end if;
+					else
+						diff_1_ctl := -1;
 					end if;
-					if int_ctl((I+9) downto I) = "1000000000" then
-						pos_ctl := I;
+					if pos2 /= -1 and pos_ctl /= -1 then
+						diff_2_ctl := pos2 - pos_ctl;
+						if diff_2_ctl < 0 then
+							diff_2_ctl := 0-diff_2_ctl;
+						end if;
+					else
+						diff_2_ctl := -1;
 					end if;
-				end loop; -- INIT_FRAME_LOOP
 
-				-- Determine if positioning would be closer at a
-				-- different offset
-				if pos1 /= -1 and pos2 /= -1 then
-					diff_1_2 := pos1 - pos2;
-					if diff_1_2 < 0 then
-						diff_1_2 := 0-diff_1_2;
+					if diff_1_2 > 5 then
+						if pos1 < pos2 then pos1 := pos1 + 10;
+						else pos2 := pos2 + 10;
+						end if;
 					end if;
-				else
-					diff_1_2 := -1;
-				end if;
-				if pos1 /= -1 and pos_ctl /= -1 then
-					diff_1_ctl := pos1 - pos_ctl;
-					if diff_1_ctl < 0 then
-						diff_1_ctl := 0-diff_1_ctl;
+					if diff_1_ctl > 5 then
+						if pos1 < pos_ctl then pos1 := pos1 + 10;
+						else pos_ctl := pos_ctl + 10;
+						end if;
 					end if;
-				else
-					diff_1_ctl := -1;
-				end if;
-				if pos2 /= -1 and pos_ctl /= -1 then
-					diff_2_ctl := pos2 - pos_ctl;
-					if diff_2_ctl < 0 then
-						diff_2_ctl := 0-diff_2_ctl;
+					if diff_2_ctl > 5 then
+						if pos2 < pos_ctl then pos_ctl := pos_ctl + 10;
+						else pos_ctl := pos_ctl + 10;
+						end if;
 					end if;
-				else
-					diff_2_ctl := -1;
-				end if;
 
-				if diff_1_2 > 5 then
-					if pos1 < pos2 then pos1 := pos1 + 10;
-					else pos2 := pos2 + 10;
+					-- If match was found for the variable, transfer
+					-- that to the global signal
+					if pos1 /= -1 then
+						offset1 <= pos1;
 					end if;
-				end if;
-				if diff_1_ctl > 5 then
-					if pos1 < pos_ctl then pos1 := pos1 + 10;
-					else pos_ctl := pos_ctl + 10;
+					if pos2 /= -1 then
+						offset2 <= pos2;
 					end if;
-				end if;
-				if diff_2_ctl > 5 then
-					if pos2 < pos_ctl then pos_ctl := pos_ctl + 10;
-					else pos_ctl := pos_ctl + 10;
+					if pos_ctl /= -1 then
+						offset_ctl <= pos_ctl;
 					end if;
-				end if;
 
-				-- If match was found for the variable, transfer
-				-- that to the global signal
-				if pos1 /= -1 then
-					offset1 <= pos1;
-				end if;
-				if pos2 /= -1 then
-					offset2 <= pos2;
-				end if;
-				if pos_ctl /= -1 then
-					offset_ctl <= pos_ctl;
-				end if;
+					-- Assume good lock if all positions could be determined
+					if pos1 /= -1 and pos2 /= -1 and pos_ctl /= -1 then
 
-				-- Assume good lock if all positions could be determined
-				if pos1 /= -1 and pos2 /= -1 and pos_ctl /= -1 then
+						locked <= '1';
 
-					locked <= '1';
+						-- Because int_train is more directly
+						-- dependent on the switching of
+						-- train_en in the next process, at this
+						-- point the signal is only driven
+						-- recessively
 
-					-- Because int_train is more directly
-					-- dependent on the switching of
-					-- train_en in the next process, at this
-					-- point the signal is only driven
-					-- recessively
+						int_train <= 'L';
 
-					int_train <= 'L';
+					end if;
 
-				end if;
+					-- While training, output zeros
+					q1 <= (others => '0');
+					q2 <= (others => '0');
 
-				-- While training, output zeros
--- 				q1 <= (others => '0');
--- 				q2 <= (others => '0');
-				-- For debugging
-				q1 <= int_q1((pos1+9) downto (pos1+2));
-				q2 <= int_q2((pos2+9) downto (pos2+2));
+					-- For debugging
+					-- q1 <= int_q1((pos1+9) downto (pos1+2));
+					-- q2 <= int_q2((pos2+9) downto (pos2+2));
 
-			else -- int_train
+				else -- int_train
 
-				-- Parse the bits of the control channel 
-				dval := int_ctl(pos_ctl+0);
-				fval := int_ctl(pos_ctl+2);
-				lval := int_ctl(pos_ctl+1);
+					if pos_ctl /= -1 then
 
-				-- If valid data, send to output and set output
-				-- latch
-				if dval = '1' then
-					q1 <= int_q1((pos1+9) downto (pos1+2));
-					q2 <= int_q2((pos2+9) downto (pos2+2));
-					out_latch <= '1';
-				end if; -- dval
+						-- Parse the bits of the control channel 
+						dval := int_ctl(pos_ctl+0);
+						fval := int_ctl(pos_ctl+2);
+						lval := int_ctl(pos_ctl+1);
 
-			end if; -- int_train
+						-- If valid data, send to output and set output
+						-- latch
+						if dval = '1' then
+							q1 <= int_q1((pos1+9) downto (pos1+2));
+							q2 <= int_q2((pos2+9) downto (pos2+2));
+							out_latch <= '1';
+						end if; -- dval
 
-		-- Falling edge of pix_clk
-		elsif pix_clk'EVENT and pix_clk = '0' then
+					end if; -- pos_ctl
 
-			-- Reset output latch if it has been set
-			out_latch <= '0';
+				end if; -- int_train
 
-		end if; -- rst/pix_clk
+			end if; -- rising edge
+
+			-- Falling edge of pix_clk
+			if pix_clk'EVENT and pix_clk = '0' then
+
+				-- Reset output latch if it has been set
+				out_latch <= '0';
+
+			end if; -- falling edge
+
+		end if; -- rst
 
 	end process; -- FRAMING
 
 	TRAIN_PROC : process (train_en)
 	begin
-		if train_en'EVENT and train_en = '1' then
-			int_train <= '1';
-		elsif train_en'EVENT and train_en = '0' then
-			int_train <= '0';
-		end if;
+
+		-- Propagate the train_en input signal if it changes
+		int_train <= train_en;
+
 	end process; -- TRAIN_PROC
 
 end Behavioral;
