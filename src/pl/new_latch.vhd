@@ -26,7 +26,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.5
--- Last edited: 8/13/18
+-- Last edited: 8/17/18
 ------------------------------------------------------------------------------
 
 
@@ -78,9 +78,6 @@ architecture Behavioral of new_latch is
 	-- Internal signal for whether or not the device is currently training
 	signal int_train : std_logic := '1';
 
-	-- Inverted pixel clock, to detect falling edge
-	signal inv_pix_clk : std_logic := '0';
-
 begin
 
 	-- Instances of the DDRshift component
@@ -108,7 +105,7 @@ begin
 
 	-- Process to determine where the correct position of each pixel data in
 	-- the longer buffer whenever the pixel clock rising edge occurs
-	FRAMING : process(pix_clk, inv_pix_clk, rst)
+	FRAMING : process(train_en, pix_clk, rst)
 
 		-- Starting positions in each buffer
 		variable pos1, pos2, pos_ctl : integer;
@@ -117,6 +114,8 @@ begin
 		variable diff_1_2, diff_1_ctl, diff_2_ctl : integer;
 		-- Bits in the control channel
 		variable dval, fval, lval : std_logic;
+		-- Flag if train_en has switched
+		variable train_swap : std_logic;
 
 	begin
 
@@ -230,13 +229,34 @@ begin
 
 						locked <= '1';
 
-						-- Because int_train is more directly
-						-- dependent on the switching of
-						-- train_en in the next process, at this
-						-- point the signal is only driven
-						-- recessively
+						-- The int_train signal is set within the same process
+						-- to avoid having it be multiply driven. The process
+						-- only allows one assignment of each signal. In the 
+						-- unlikely event that the pix_clk rises at the same
+						-- time as train_en changes, the train_en will take
+						-- precedence
+						train_swap := '0';
 
-						int_train <= 'L';
+						-- Rising edge of train_en
+						if train_en'EVENT and train_en = '1' then
+
+							int_train <= '1';
+							train_swap := '1';
+
+						end if;
+
+						-- Falling edge of train_en
+						if train_en'EVENT and train_en = '0' then
+
+							int_train <= '0';
+							train_swap := '1';
+
+						end if;
+
+						-- Check if either of the above executed
+						if train_swap = '0' then
+							int_train <= '0';
+						end if;
 
 					end if;
 
@@ -283,12 +303,5 @@ begin
 
 	end process; -- FRAMING
 
-	TRAIN_PROC : process (train_en)
-	begin
-
-		-- Propagate the train_en input signal if it changes
-		int_train <= train_en;
-
-	end process; -- TRAIN_PROC
-
 end Behavioral;
+
