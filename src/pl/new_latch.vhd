@@ -46,10 +46,13 @@ entity new_latch is
 	       pix_clk : in STD_LOGIC;
 	       clk : in STD_LOGIC;
 	       rst : in STD_LOGIC;
+	       clr : in STD_LOGIC;
 	       out_latch : out STD_LOGIC := '0';
 	       locked : out STD_LOGIC := '0';
 	       q1 : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0');
 	       q2 : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
+	       -- q1 : out STD_LOGIC_VECTOR (31 downto 0) := (others => '0');
+	       -- q2 : out STD_LOGIC_VECTOR (31 downto 0) := (others => '0'));
 end new_latch;
 
 architecture Behavioral of new_latch is
@@ -71,12 +74,17 @@ architecture Behavioral of new_latch is
 
 	-- Internal 30-bit buffers from the serial data output from the sensor
 	signal int_q1, int_q2, int_ctl : std_logic_vector (29 downto 0);
+	-- If outputting entire words, need longer buffers
+	-- signal int_q1, int_q2, int_ctl : std_logic_vector (59 downto 0);
 
 	-- Offset locations from which to draw each pixel from the 30-bit buffer
 	signal offset1, offset2, offset_ctl : integer := 0;
 
 	-- Internal signal for whether or not the device is currently training
 	signal int_train : std_logic := '1';
+
+	-- Signal to clear the DDR shift register but not reset the framing of the system
+	signal ddr_rst : std_logic;
 
 begin
 
@@ -85,7 +93,7 @@ begin
 		generic map (bits => 30)
 		port map (d => d1,
 			  clk => clk,
-			  rst => rst,
+			  rst => ddr_rst,
 			  q => int_q1);
 
 	D2_INST : DDRshift 
@@ -101,6 +109,9 @@ begin
 			  clk => clk,
 			  rst => rst,
 			  q => int_ctl);
+
+	ddr_rst <= rst;
+	-- ddr_rst <= rst or clr;
 
 
 	-- Process to determine where the correct position of each pixel data in
@@ -125,9 +136,21 @@ begin
 			pos1 := -1;
 			pos2 := -1;
 			pos_ctl := -1;
-			offset1 <= 2; -- Init to 2 for DDRblock delay
+			offset1 <= 2; -- Init to 2 for expected DDRblock delay
 			offset2 <= 2;
 			offset_ctl <= 2;
+
+			-- Control bit variables
+			dval := '0';
+			fval := '0';
+			lval := '0';
+
+			-- Output signals
+			q1 <= (others => '0');
+			q2 <= (others => '0');
+			out_latch <= '0';
+
+		elsif clr = '1' then -- Clear buffer and output
 
 			-- Control bit variables
 			dval := '0';
@@ -280,9 +303,24 @@ begin
 						-- If valid data, send to output and set output
 						-- latch
 						if dval = '1' then
+
 							q1 <= int_q1((pos1+9) downto (pos1+2));
 							q2 <= int_q2((pos2+9) downto (pos2+2));
+
+							-- Form output words by concatenating bytes
+							-- from the input buffer
+							-- q1 <= int_q1((pos1+39) downto (pos1+32))
+							--       & int_q1((pos1+29) downto (pos1+22))
+							--       & int_q1((pos1+19) downto (pos1+12))
+							--       & int_q1((pos1+9) downto (pos1+2));
+
+							-- q2 <= int_q2((pos2+39) downto (pos2+32))
+							--       & int_q2((pos2+29) downto (pos2+22))
+							--       & int_q2((pos2+19) downto (pos2+12))
+							--       & int_q2((pos2+9) downto (pos2+2));
+
 							out_latch <= '1';
+
 						end if; -- dval
 
 					end if; -- pos_ctl

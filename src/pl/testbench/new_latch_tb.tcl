@@ -120,10 +120,11 @@ for {set data 0} {$data < 256} {incr data} {
 # foreach data $ldata
 
 	# set data [lindex ldata $j]
+	set datasamp [expr {$data << 2}]
 
 	for {set i 0} {$i < 10} {incr i} {
 
-		set bit_data [expr {[expr {$data >> $i}] & 1}]
+		set bit_data [expr {[expr {$datasamp >> $i}] & 1}]
 		set bit_ctl [expr {[expr {$ctl >> $i}] & 1}]
 
 		if {$bit_data} {
