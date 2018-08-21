@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- File:
---	interface.vhd
+--	new_latch.vhd
 --
 -- Description:
 --	This is the interface to the CMV2000 CMOS active pixel sensor. The
@@ -23,7 +23,7 @@
 --	will be read by software running on the PS.
 --
 -- Author:
---	David Stockhouse & Sam Janoff
+--	David Stockhouse
 --
 -- Revision 1.5
 -- Last edited: 8/20/18
