@@ -26,7 +26,7 @@
 --	David Stockhouse & Sam Janoff
 --
 -- Revision 1.5
--- Last edited: 8/17/18
+-- Last edited: 8/20/18
 ------------------------------------------------------------------------------
 
 
@@ -119,18 +119,17 @@ begin
 
 	begin
 
-		if rst = '1' then
-			-- Reset signals and variables
+		if rst = '1' then -- Reset signals and variables
 
 			-- Pixel delineation/framing
 			pos1 := -1;
 			pos2 := -1;
 			pos_ctl := -1;
-			offset1 <= 0;
-			offset2 <= 0;
-			offset_ctl <= 0;
+			offset1 <= 2; -- Init to 2 for DDRblock delay
+			offset2 <= 2;
+			offset_ctl <= 2;
 
-			-- Control bits
+			-- Control bit variables
 			dval := '0';
 			fval := '0';
 			lval := '0';
@@ -141,6 +140,30 @@ begin
 			out_latch <= '0';
 
 		else
+
+			-- The int_train signal is set within the same process
+			-- to avoid having it be multiply driven. The process
+			-- only allows one assignment of each signal. In the 
+			-- unlikely event that the pix_clk rises at the same
+			-- time as train_en changes, the train_en will take
+			-- precedence
+			train_swap := '0';
+
+			-- Rising edge of train_en
+			if train_en'EVENT and train_en = '1' then
+
+				int_train <= '1';
+				train_swap := '1';
+
+			end if;
+
+			-- Falling edge of train_en
+			if train_en'EVENT and train_en = '0' then
+
+				int_train <= '0';
+				train_swap := '1';
+
+			end if;
 
 			-- Rising edge of pix_clk
 			if pix_clk'EVENT and pix_clk = '1' then
@@ -156,7 +179,7 @@ begin
 
 					-- Determine first possible frame for each signal
 					INIT_FRAME_LOOP : for I in 0 to 9 loop
-						-- Test each signal buffer against it's
+						-- Test each signal buffer against its
 						-- training sequence
 						if int_q1((I+9) downto I) = "0001010101" then
 							pos1 := I;
@@ -229,31 +252,8 @@ begin
 
 						locked <= '1';
 
-						-- The int_train signal is set within the same process
-						-- to avoid having it be multiply driven. The process
-						-- only allows one assignment of each signal. In the 
-						-- unlikely event that the pix_clk rises at the same
-						-- time as train_en changes, the train_en will take
-						-- precedence
-						train_swap := '0';
-
-						-- Rising edge of train_en
-						if train_en'EVENT and train_en = '1' then
-
-							int_train <= '1';
-							train_swap := '1';
-
-						end if;
-
-						-- Falling edge of train_en
-						if train_en'EVENT and train_en = '0' then
-
-							int_train <= '0';
-							train_swap := '1';
-
-						end if;
-
-						-- Check if either of the above executed
+						-- Check if train_en had an edge at the same time
+						-- If so, that takes precedence
 						if train_swap = '0' then
 							int_train <= '0';
 						end if;
