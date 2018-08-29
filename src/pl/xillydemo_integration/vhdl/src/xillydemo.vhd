@@ -308,11 +308,30 @@ architecture sample_arch of xillydemo is
 	       q2 : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
   end component;
 
+  signal g_rst : in STD_LOGIC; -- Global reset
   signal d1, d2, d_ctl : STD_LOGIC;
   signal train_en, pix_clk, lvds_clk, ddr_rst : STD_LOGIC;
   signal ddr_latch, locked : STD_LOGIC;
   signal q1, q2 : STD_LOGIC_VECTOR (7 downto 0);
+  signal extended_buffer : STD_LOGIC_VECTOR (31 downto 0);
   signal fifo_latch, ddr_latched, fifo_full_1, fifo_full_2 : STD_LOGIC;
+  
+  -- Clock wizard IP
+  component simclk_5mhz_wrapper is
+    port (
+      clk_100MHz : in STD_LOGIC;
+      pll_locked : out STD_LOGIC;
+      reset_rtl_0 : in STD_LOGIC;
+      simclk_25mhz : out STD_LOGIC;
+      simclk_5mhz : out STD_LOGIC
+    );
+  end component;
+
+  signal pll_locked : STD_LOGIC;
+  signal simclk_25mhz : STD_LOGIC;
+  signal simclk_5mhz : STD_LOGIC
+
+  signal fakesensor_1, fakesensor_2, fakesensor_ctl : STD_LOGIC;
   
 begin
   xillybus_ins : xillybus
@@ -504,6 +523,12 @@ begin
 -- 
 --   user_r_read_32_eof <= '0';
 
+  simclk_5mhz_wrapper port map ( clk_100MHz => clk_100,
+				 pll_locked => pll_locked,
+				 reset_rtl_0 => reset_rtl_0,
+				 simclk_25mhz => simclk_25mhz,
+				 simclk_5mhz => simclk_5mhz);
+
   DDR_INST : new_latch port map ( d1 => d1,
 				  d2 => d2,
 				  d_ctl => d_ctl,
@@ -537,11 +562,12 @@ begin
   -- Using the 32 bit FIFO to transmit single bytes isn't efficient, but it 
   -- keeps things consistent with the other FIFO and it's easy to ditch the rest
   -- of the data in software
+  extended_buffer <= "000000000000000000000000" & q1;
   fifo_32 : fifo_32x512
     port map(
       clk        => bus_clk,
       srst       => reset_32,
-      din        => (others => '0') & q1,
+      din        => extended_buffer,
       wr_en      => fifo_latch,
       rd_en      => user_r_read_32_rden,
       dout       => user_r_read_32_data,
