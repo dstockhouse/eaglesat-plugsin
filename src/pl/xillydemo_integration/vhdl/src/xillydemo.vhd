@@ -1,3 +1,19 @@
+------------------------------------------------------------------------------
+-- File:
+--	xillydemo.vhd
+--
+-- Description:
+--	This is a modification of the xillydemo example code, using the same
+--	xillybus interface. This is to test the functionality of the interface
+--	to the sensor before we have custom xillybus up and running.
+--
+-- Author:
+--	David Stockhouse
+--
+-- Revision 1.0
+-- Last edited: 8/29/18
+------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
@@ -308,30 +324,20 @@ architecture sample_arch of xillydemo is
 	       q2 : out STD_LOGIC_VECTOR (7 downto 0) := (others => '0'));
   end component;
 
-  signal g_rst : in STD_LOGIC; -- Global reset
+  signal g_rst : STD_LOGIC; -- Global reset
   signal d1, d2, d_ctl : STD_LOGIC;
   signal train_en, pix_clk, lvds_clk, ddr_rst : STD_LOGIC;
-  signal ddr_latch, locked : STD_LOGIC;
+  signal ddr_latch, ddr_locked : STD_LOGIC;
   signal q1, q2 : STD_LOGIC_VECTOR (7 downto 0);
   signal extended_buffer : STD_LOGIC_VECTOR (31 downto 0);
   signal fifo_latch, ddr_latched, fifo_full_1, fifo_full_2 : STD_LOGIC;
-  
-  -- Clock wizard IP
-  component simclk_5mhz_wrapper is
-    port (
-      clk_100MHz : in STD_LOGIC;
-      pll_locked : out STD_LOGIC;
-      reset_rtl_0 : in STD_LOGIC;
-      simclk_25mhz : out STD_LOGIC;
-      simclk_5mhz : out STD_LOGIC
-    );
-  end component;
 
-  signal pll_locked : STD_LOGIC;
-  signal simclk_25mhz : STD_LOGIC;
-  signal simclk_5mhz : STD_LOGIC
-
+  signal pix1, pix2, pix_ctl : STD_LOGIC_VECTOR (9 downto 0);
   signal fakesensor_1, fakesensor_2, fakesensor_ctl : STD_LOGIC;
+  signal reset_request : STD_LOGIC;
+
+  -- Sensor control signals
+  signal frame_req, t_exp1 : STD_LOGIC;
   
 begin
   xillybus_ins : xillybus
@@ -523,11 +529,156 @@ begin
 -- 
 --   user_r_read_32_eof <= '0';
 
-  simclk_5mhz_wrapper port map ( clk_100MHz => clk_100,
-				 pll_locked => pll_locked,
-				 reset_rtl_0 => reset_rtl_0,
-				 simclk_25mhz => simclk_25mhz,
-				 simclk_5mhz => simclk_5mhz);
+  CLOCK_DIVIDER : process(clk_100, g_rst)
+	  variable counter_5mhz, counter_25mhz : integer;
+  begin
+
+	  if g_rst = '1' then
+		  -- Reset counter/divider
+		  counter_5mhz := 0;
+		  counter_25mhz := 1; -- After rst, the 25MHz counter is one
+		  		      -- count offset, for edge alignment
+	  else
+
+		  -- Rising edge of clk_100
+		  if clk_100'EVENT and clk_100 = '1' then
+
+			  -- Increment counters
+			  counter_5mhz := counter_5mhz + 1;
+			  counter_25mhz := counter_25mhz + 1;
+
+			  -- Divide by 20 (toggle every 10) for 5MHz clock
+			  if counter_5mhz >= 10 then
+				  counter_5mhz := 0;
+				  pix_clk <= not pix_clk;
+			  end if;
+
+			  -- Divide by 4 (toggle every 2) for 25MHz clock
+			  if counter_25mhz >= 2 then
+				  counter_25mhz := 0;
+				  lvds_clk <= not lvds_clk;
+			  end if;
+
+		  end if;
+
+	  end if;
+
+  end process; -- CLOCK_DIVIDER
+
+--  fakesensor_1 <= "0001010101";
+--  fakesensor_2 <= "0001010101";
+--  fakesensor_ctl <= "1000000000";
+
+  SYSTEM_RESET : process(clk_100, reset_request)
+	  variable rst_counter : integer := 0;
+  begin
+
+	  -- Rising edge of reset_request
+	  if reset_request'EVENT and reset_request = '1' then
+		  -- Enable global logic reset
+		  g_rst <= '1';
+		  -- Reset counter
+		  rst_counter := 0;
+	  end if;
+
+	  -- Rising edge of clk_100
+	  if g_rst = '1' and clk_100'EVENT and clk_100 = '1' then
+		  rst_counter := rst_counter + 1;
+		  -- Leave g_rst high for 10ms
+		  if rst_counter >= 1000000 then
+			  rst_counter := 0;
+			  g_rst <= '0';
+		  end if;
+	  end if;
+
+  end process; -- SYSTEM_RESET
+
+  EXECUTION : process(pix_clk, g_rst)
+	  variable pix_count : integer;
+  begin
+
+	  if g_rst = '1' then
+		  pix_count := 0;
+		  train_en <= '0';
+		  reset_request <= '0';
+	  else
+
+		  -- Rising edge of pix_clk
+		  if pix_clk'EVENT and pix_clk = '1' then
+			  pix_count := pix_count + 1;
+
+			  if pix_count < 1000 then
+
+				  train_en <= '1';
+
+				  -- Training data
+				  pix1 <= "0001010101";
+				  pix2 <= "0001010101";
+				  pix_ctl <= "1000000000";
+
+			  elsif pix_count < ((2048*1088/2) + 1000) then
+
+				  train_en <= '0';
+
+				  -- "Actual" data, the character 'G'
+				  -- LSBs on data should be ignored
+				  pix1 <= "0100011110";
+				  pix2 <= "0100011101";
+				  pix_ctl <= "1000000111";
+
+			  else
+
+				  -- Training data again
+				  pix1 <= "0001010101";
+				  pix2 <= "0001010101";
+				  pix_ctl <= "1000000000";
+
+			  end if;
+
+			  -- After 10 seconds reset counter
+			  if pix_count >= 50000000 then
+				  pix_count := 0;
+			  	  -- Request a reset from a different process
+				  reset_request <= '1';
+			  end if;
+
+		  end if;
+
+	  end if;
+
+  end process; -- EXECUTION
+
+  SERIALIZE : process(lvds_clk, g_rst)
+	  variable index : integer := 0;
+  begin
+
+	  if g_rst = '1' then -- Reset
+		  index := 0;
+	  else
+
+		  -- Rising edge of lvds_clk
+		  if lvds_clk'EVENT and lvds_clk = '0' then
+
+			  fakesensor_1 <= pix1(index);
+			  fakesensor_2 <= pix2(index);
+			  fakesensor_ctl <= pix_ctl(index);
+
+			  index := index + 1;
+			  if index > 9 then
+				  index := 0;
+			  end if;
+
+		  end if;
+	  end if;
+  end process; -- SERIALIZE;
+
+--  fakesensor_1 <= '0';
+--  fakesensor_2 <= '0';
+--  fakesensor_ctl <= '0';
+
+  d1 <= fakesensor_1;
+  d2 <= fakesensor_2;
+  d_ctl <= fakesensor_ctl;
 
   DDR_INST : new_latch port map ( d1 => d1,
 				  d2 => d2,
@@ -537,7 +688,7 @@ begin
 				  clk => lvds_clk,
 				  rst => ddr_rst,
 				  out_latch => ddr_latch,
-				  locked => locked,
+				  locked => ddr_locked,
 				  q1 => q1,
 				  q2 => q2);
 
