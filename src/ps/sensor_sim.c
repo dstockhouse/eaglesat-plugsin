@@ -132,9 +132,10 @@ int frameRead(int exposure) {
 	while(bytesInLow < (APS_COLS * APS_ROWS / 2) - 1) {
 
 		int newBytes;
+		char bufferWord[4];
 
-		// Read low bytes
-		newBytes = read(dataLow, &pixelBuf[0], APS_COLS * APS_ROWS / 2);
+		// Read low bytes, 4 at a time
+		newBytes = read(dataLow, bufferWord, 4);
 
 		// Ensure read was successful
 		if (newBytes < 0) {
@@ -148,8 +149,10 @@ int frameRead(int exposure) {
 
 		} // if read failed
 
+		pixelBuf[bytesInLow] = bufferWord[0];
+
 		// Add new amount of bytes read to running count
-		bytesInLow += newBytes;
+		bytesInLow += 1;
 
 		// Check if EOF reached before any data
 		if (newBytes == 0) {

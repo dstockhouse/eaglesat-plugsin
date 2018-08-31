@@ -34,8 +34,11 @@
 #define APS_ROWS	1088
 #define APS_COLS	2048
 
-#define PIXEL_FILE_HIGH	"/dev/xillybus_cmos_rh_32"
-#define PIXEL_FILE_LOW	"/dev/xillybus_cmos_rl_32"
+// #define PIXEL_FILE_HIGH	"/dev/xillybus_cmos_rh_32"
+// #define PIXEL_FILE_LOW	"/dev/xillybus_cmos_rl_32"
+
+#define PIXEL_FILE_HIGH	"/dev/xillybus_read_8"
+#define PIXEL_FILE_LOW	"/dev/xillybus_read_32"
 
 // Pin connections from the Zedboard PS to the CMV2000. Available pins found
 // in the xillydemo.ucf file in the src directory of the vivado xillybus code.
