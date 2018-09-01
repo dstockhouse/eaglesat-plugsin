@@ -337,9 +337,338 @@ architecture sample_arch of xillydemo is
   signal reset_request : STD_LOGIC;
 
   -- Sensor control signals
-  signal frame_req, t_exp1 : STD_LOGIC;
+  signal frame_req, t_exp1, trigger : STD_LOGIC;
+
+  signal test_counter : integer := 0;
   
 begin
+
+	-- rst high until system started
+	g_rst <= not quiesce;
+
+-- 	TRIGGER_LATCH : process(bus_clk)
+-- 		variable trig_counter : integer := 0;
+-- 	begin
+-- 
+-- 		if bus_clk'EVENT and bus_clk = '0' then
+-- 			if trig_counter < 0 then
+-- 				trig_counter := 0;
+-- 				trigger <= '0';
+-- 			elsif trig_counter >= 100000000 then
+-- 				trig_counter := 0;
+-- 				trigger <= '1';
+-- 			else
+-- 				trig_counter := trig_counter + 1;
+-- 				trigger <= '0';
+-- 			end if;
+-- 		end if;
+-- 
+-- 	end process; -- TRIGGER_LATCH
+
+
+  CLOCK_DIVIDER : process(bus_clk, g_rst)
+	  variable counter_5mhz, counter_25mhz : integer;
+  begin
+
+	  if g_rst = '1' then
+		  -- Reset counter/divider
+		  counter_5mhz := 0;
+		  counter_25mhz := 0;
+		  trigger <= '0';
+	  else
+
+		  -- Rising edge of clk_100
+		  if bus_clk'EVENT and bus_clk = '0' then
+
+			  -- Increment counters
+
+			  -- Divide by 20 (toggle every 10) for 5MHz clock
+			  -- if counter_5mhz >= 10 then
+			  if counter_5mhz < 0 then
+				  counter_5mhz := 0;
+				  trigger <= '0';
+			  elsif counter_5mhz > 1000000 then
+				  counter_5mhz := 0;
+				  pix_clk <= not pix_clk;
+				  trigger <= '1';
+			  else
+				  counter_5mhz := counter_5mhz + 1;
+				  trigger <= '0';
+			  end if;
+
+			  -- Divide by 4 (toggle every 2) for 25MHz clock
+			  -- if counter_25mhz >= 2 then
+			  if counter_25mhz < 0 then
+				  counter_25mhz := 0;
+				  trigger <= '0';
+			  elsif counter_25mhz > 200000 then
+				  counter_25mhz := 0;
+				  lvds_clk <= not lvds_clk;
+				  trigger <= '1';
+			  else
+				  counter_25mhz := counter_25mhz + 1;
+				  trigger <= '0';
+			  end if;
+
+		  end if;
+	  end if;
+  end process; -- CLOCK_DIVIDER
+
+--   SYSTEM_RESET : process(clk_100, reset_request)
+-- 	  variable rst_counter : integer := 0;
+--   begin
+-- 
+-- 	  -- Rising edge of reset_request
+-- 	  if reset_request'EVENT and reset_request = '1' then
+-- 		  -- Enable global logic reset
+-- 		  g_rst <= '1';
+-- 		  -- Reset counter
+-- 		  rst_counter := 0;
+-- 	  end if;
+-- 
+-- 	  -- Rising edge of clk_100
+-- 	  if g_rst = '1' and clk_100'EVENT and clk_100 = '1' then
+-- 		  rst_counter := rst_counter + 1;
+-- 		  -- Leave g_rst high for 10ms
+-- 		  if rst_counter >= 1000000 then
+-- 			  rst_counter := 0;
+-- 			  g_rst <= '0';
+-- 		  end if;
+-- 	  end if;
+-- 
+--   end process; -- SYSTEM_RESET
+
+  EXECUTION : process(pix_clk, g_rst)
+	  variable pix_count : integer;
+  begin
+
+	  if g_rst = '1' then
+		  pix_count := 0;
+		  train_en <= '0';
+		  reset_request <= '0';
+	  else
+
+		  -- Rising edge of pix_clk
+		  if pix_clk'EVENT and pix_clk = '1' then
+			  pix_count := pix_count + 1;
+
+			  if pix_count < 1000 then
+
+				  train_en <= '1';
+
+				  -- Training data
+				  pix1 <= "0001010101";
+				  pix2 <= "0001010101";
+				  pix_ctl <= "1000000000";
+
+			  elsif pix_count < ((2048*1088/2) + 1000) then
+
+				  train_en <= '0';
+
+				  -- "Actual" data, the character 'G'
+				  -- LSBs on data should be ignored
+				  pix1 <= "0100011110";
+				  pix2 <= "0100011101";
+				  pix_ctl <= "1000000111";
+
+			  else
+
+				  -- Training data again
+				  pix1 <= "0001010101";
+				  pix2 <= "0001010101";
+				  pix_ctl <= "1000000000";
+
+			  end if;
+
+			  -- After 10 seconds reset counter
+			  if pix_count >= 50000000 then
+				  pix_count := 0;
+			  	  -- Request a reset from a different process
+				  reset_request <= '1';
+			  end if;
+
+		  end if;
+
+	  end if;
+
+  end process; -- EXECUTION
+
+  SERIALIZE : process(lvds_clk, g_rst)
+	  variable index : integer := 0;
+  begin
+
+	  if g_rst = '1' then -- Reset
+		  index := 0;
+	  else
+
+		  -- Rising edge of lvds_clk
+		  if lvds_clk'EVENT and lvds_clk = '0' then
+
+			  fakesensor_1 <= pix1(index);
+			  fakesensor_2 <= pix2(index);
+			  fakesensor_ctl <= pix_ctl(index);
+
+			  index := index + 1;
+			  if index > 9 then
+				  index := 0;
+			  end if;
+
+		  end if;
+	  end if;
+  end process; -- SERIALIZE;
+
+--  fakesensor_1 <= '0';
+--  fakesensor_2 <= '0';
+--  fakesensor_ctl <= '0';
+
+  d1 <= fakesensor_1;
+  d2 <= fakesensor_2;
+  d_ctl <= fakesensor_ctl;
+
+  ------ Interface
+
+  -- Temporarily
+  ddr_rst <= g_rst;
+
+  DDR_INST : new_latch port map ( d1 => d1,
+				  d2 => d2,
+				  d_ctl => d_ctl,
+				  train_en => train_en,
+				  pix_clk => pix_clk,
+				  clk => lvds_clk,
+				  rst => ddr_rst,
+				  out_latch => ddr_latch,
+				  locked => ddr_locked,
+				  q1 => q1,
+				  q2 => q2);
+
+  LATCH_DDR : process(pix_clk, ddr_latch, bus_clk, clk_100)
+	  variable clk_counter, wait_counter, new_counter : integer := 0;
+	  variable set_latch, start_wait : boolean := false;
+  begin
+
+ 	  -- Rising edge of pix_clk
+ 	  if pix_clk'EVENT and pix_clk = '1' then
+		  set_latch := true;
+ 	  end if;
+
+	  -- Falling edge of bus_clk
+	  if bus_clk'EVENT and bus_clk = '0' then
+		  if set_latch then
+ 			  fifo_latch <= '1';
+			  set_latch := false;
+		  else
+			  fifo_latch <= '0';
+ 		  end if;
+ 	  end if;
+
+  end process; -- LATCH_DDR
+
+  -- Using the 32 bit FIFO to transmit single bytes isn't efficient, but it 
+  -- keeps things consistent with the other FIFO and it's easy to ditch the rest
+  -- of the data in software
+  -- extended_buffer <= "000000000000000000000000" & q1;
+  -- extended_buffer <= std_logic_vector(to_unsigned(test_counter, 32));
+  extended_buffer <= "01101011" & "00110101" & "01011100" & "01010111";
+  fifo_32 : fifo_32x512
+    port map(
+      clk        => bus_clk,
+      srst       => reset_32,
+      din        => extended_buffer,
+      wr_en      => trigger,
+      rd_en      => user_r_read_32_rden,
+      dout       => user_r_read_32_data,
+      full       => fifo_full_1,
+      empty      => user_r_read_32_empty
+      );
+
+  -- reset_32 <= not (user_w_write_32_open or user_r_read_32_open);
+    reset_32 <= '0'; -- For now
+
+    user_r_read_32_eof <= '0'; -- For now
+  
+--  8-bit loopback
+
+  fifo_8 : fifo_8x2048
+    port map(
+      clk        => bus_clk,
+      srst       => reset_8,
+      -- din        => q2,
+      din	 => extended_buffer (7 downto 0),
+      -- wr_en      => fifo_latch,
+      wr_en	 => trigger,
+      rd_en      => user_r_read_8_rden,
+      dout       => user_r_read_8_data,
+      full       => fifo_full_2,
+      empty      => user_r_read_8_empty
+      );
+
+    -- reset_8 <= not (user_w_write_8_open or user_r_read_8_open);
+    reset_8 <= '0'; -- For now
+
+    user_r_read_8_eof <= '0'; -- For now
+
+--     EOF_8 : process (user_r_read_8_eof)
+--     begin
+
+
+--  32-bit loopback
+
+--   fifo_32 : fifo_32x512
+--     port map(
+--       clk        => bus_clk,
+--       srst       => reset_32,
+--       din        => user_w_write_32_data,
+--       wr_en      => user_w_write_32_wren,
+--       rd_en      => user_r_read_32_rden,
+--       dout       => user_r_read_32_data,
+--       full       => user_w_write_32_full,
+--       empty      => user_r_read_32_empty
+--       );
+-- 
+--   reset_32 <= not (user_w_write_32_open or user_r_read_32_open);
+-- 
+--   user_r_read_32_eof <= '0';
+
+  audio_ins : i2s_audio
+    port map(
+      bus_clk => bus_clk,
+      clk_100 => clk_100,
+      quiesce => quiesce,
+      audio_mclk => audio_mclk,
+      audio_dac => audio_dac,
+      audio_adc => audio_adc,
+      audio_bclk => audio_bclk,
+      audio_lrclk => audio_lrclk,
+      user_r_audio_rden => user_r_audio_rden,
+      user_r_audio_empty => user_r_audio_empty,
+      user_r_audio_data => user_r_audio_data,
+      user_r_audio_eof => user_r_audio_eof,
+      user_r_audio_open => user_r_audio_open,
+      user_w_audio_wren => user_w_audio_wren,
+      user_w_audio_full => user_w_audio_full,
+      user_w_audio_data => user_w_audio_data,
+      user_w_audio_open => user_w_audio_open
+      );
+
+  smbus_ins : smbus
+    port map(
+      bus_clk => bus_clk,
+      quiesce => quiesce,
+      smb_sclk => smb_sclk,
+      smb_sdata => smb_sdata,
+      smbus_addr => smbus_addr,
+      user_r_smb_rden => user_r_smb_rden,
+      user_r_smb_empty => user_r_smb_empty,
+      user_r_smb_data => user_r_smb_data,
+      user_r_smb_eof => user_r_smb_eof,
+      user_r_smb_open => user_r_smb_open,
+      user_w_smb_wren => user_w_smb_wren,
+      user_w_smb_full => user_w_smb_full,
+      user_w_smb_data => user_w_smb_data,
+      user_w_smb_open => user_w_smb_open
+      );
+  
   xillybus_ins : xillybus
     port map (
       -- Ports related to /dev/xillybus_mem_8
@@ -510,283 +839,4 @@ begin
   user_r_mem_8_empty <= '0';
   user_r_mem_8_eof <= '0';
   user_w_mem_8_full <= '0';
-
---  32-bit loopback
-
---   fifo_32 : fifo_32x512
---     port map(
---       clk        => bus_clk,
---       srst       => reset_32,
---       din        => user_w_write_32_data,
---       wr_en      => user_w_write_32_wren,
---       rd_en      => user_r_read_32_rden,
---       dout       => user_r_read_32_data,
---       full       => user_w_write_32_full,
---       empty      => user_r_read_32_empty
---       );
--- 
---   reset_32 <= not (user_w_write_32_open or user_r_read_32_open);
--- 
---   user_r_read_32_eof <= '0';
-
-  CLOCK_DIVIDER : process(clk_100, g_rst)
-	  variable counter_5mhz, counter_25mhz : integer;
-  begin
-
-	  if g_rst = '1' then
-		  -- Reset counter/divider
-		  counter_5mhz := 0;
-		  counter_25mhz := 1; -- After rst, the 25MHz counter is one
-		  		      -- count offset, for edge alignment
-	  else
-
-		  -- Rising edge of clk_100
-		  if clk_100'EVENT and clk_100 = '1' then
-
-			  -- Increment counters
-			  counter_5mhz := counter_5mhz + 1;
-			  counter_25mhz := counter_25mhz + 1;
-
-			  -- Divide by 20 (toggle every 10) for 5MHz clock
-			  if counter_5mhz >= 10 then
-				  counter_5mhz := 0;
-				  pix_clk <= not pix_clk;
-			  end if;
-
-			  -- Divide by 4 (toggle every 2) for 25MHz clock
-			  if counter_25mhz >= 2 then
-				  counter_25mhz := 0;
-				  lvds_clk <= not lvds_clk;
-			  end if;
-
-		  end if;
-
-	  end if;
-
-  end process; -- CLOCK_DIVIDER
-
---  fakesensor_1 <= "0001010101";
---  fakesensor_2 <= "0001010101";
---  fakesensor_ctl <= "1000000000";
-
-  SYSTEM_RESET : process(clk_100, reset_request)
-	  variable rst_counter : integer := 0;
-  begin
-
-	  -- Rising edge of reset_request
-	  if reset_request'EVENT and reset_request = '1' then
-		  -- Enable global logic reset
-		  g_rst <= '1';
-		  -- Reset counter
-		  rst_counter := 0;
-	  end if;
-
-	  -- Rising edge of clk_100
-	  if g_rst = '1' and clk_100'EVENT and clk_100 = '1' then
-		  rst_counter := rst_counter + 1;
-		  -- Leave g_rst high for 10ms
-		  if rst_counter >= 1000000 then
-			  rst_counter := 0;
-			  g_rst <= '0';
-		  end if;
-	  end if;
-
-  end process; -- SYSTEM_RESET
-
-  EXECUTION : process(pix_clk, g_rst)
-	  variable pix_count : integer;
-  begin
-
-	  if g_rst = '1' then
-		  pix_count := 0;
-		  train_en <= '0';
-		  reset_request <= '0';
-	  else
-
-		  -- Rising edge of pix_clk
-		  if pix_clk'EVENT and pix_clk = '1' then
-			  pix_count := pix_count + 1;
-
-			  if pix_count < 1000 then
-
-				  train_en <= '1';
-
-				  -- Training data
-				  pix1 <= "0001010101";
-				  pix2 <= "0001010101";
-				  pix_ctl <= "1000000000";
-
-			  elsif pix_count < ((2048*1088/2) + 1000) then
-
-				  train_en <= '0';
-
-				  -- "Actual" data, the character 'G'
-				  -- LSBs on data should be ignored
-				  pix1 <= "0100011110";
-				  pix2 <= "0100011101";
-				  pix_ctl <= "1000000111";
-
-			  else
-
-				  -- Training data again
-				  pix1 <= "0001010101";
-				  pix2 <= "0001010101";
-				  pix_ctl <= "1000000000";
-
-			  end if;
-
-			  -- After 10 seconds reset counter
-			  if pix_count >= 50000000 then
-				  pix_count := 0;
-			  	  -- Request a reset from a different process
-				  reset_request <= '1';
-			  end if;
-
-		  end if;
-
-	  end if;
-
-  end process; -- EXECUTION
-
-  SERIALIZE : process(lvds_clk, g_rst)
-	  variable index : integer := 0;
-  begin
-
-	  if g_rst = '1' then -- Reset
-		  index := 0;
-	  else
-
-		  -- Rising edge of lvds_clk
-		  if lvds_clk'EVENT and lvds_clk = '0' then
-
-			  fakesensor_1 <= pix1(index);
-			  fakesensor_2 <= pix2(index);
-			  fakesensor_ctl <= pix_ctl(index);
-
-			  index := index + 1;
-			  if index > 9 then
-				  index := 0;
-			  end if;
-
-		  end if;
-	  end if;
-  end process; -- SERIALIZE;
-
---  fakesensor_1 <= '0';
---  fakesensor_2 <= '0';
---  fakesensor_ctl <= '0';
-
-  d1 <= fakesensor_1;
-  d2 <= fakesensor_2;
-  d_ctl <= fakesensor_ctl;
-
-  DDR_INST : new_latch port map ( d1 => d1,
-				  d2 => d2,
-				  d_ctl => d_ctl,
-				  train_en => train_en,
-				  pix_clk => pix_clk,
-				  clk => lvds_clk,
-				  rst => ddr_rst,
-				  out_latch => ddr_latch,
-				  locked => ddr_locked,
-				  q1 => q1,
-				  q2 => q2);
-
-  LATCH_DDR : process(ddr_latch, bus_clk)
-  begin
-
-	  if bus_clk'EVENT and bus_clk = '1' then
-
-		  if fifo_latch = '1' then
-			  fifo_latch <= '0';
-		  end if;
-
-	  end if;
-
-	  -- Rising edge of ddr_latch
-	  if ddr_latch'EVENT and ddr_latch = '1' then
-		  fifo_latch <= '1';
-	  end if;
-
-  end process; -- LATCH_DDR
-
-  -- Using the 32 bit FIFO to transmit single bytes isn't efficient, but it 
-  -- keeps things consistent with the other FIFO and it's easy to ditch the rest
-  -- of the data in software
-  extended_buffer <= "000000000000000000000000" & q1;
-  fifo_32 : fifo_32x512
-    port map(
-      clk        => bus_clk,
-      srst       => reset_32,
-      din        => extended_buffer,
-      wr_en      => fifo_latch,
-      rd_en      => user_r_read_32_rden,
-      dout       => user_r_read_32_data,
-      full       => fifo_full_1,
-      empty      => user_r_read_32_empty
-      );
-
-  -- reset_32 <= not (user_w_write_32_open or user_r_read_32_open);
-    reset_32 <= '0'; -- For now
-
-    user_r_read_32_eof <= '0'; -- For now
-  
---  8-bit loopback
-
-  fifo_8 : fifo_8x2048
-    port map(
-      clk        => bus_clk,
-      srst       => reset_8,
-      din        => q2,
-      wr_en      => fifo_latch,
-      rd_en      => user_r_read_8_rden,
-      dout       => user_r_read_8_data,
-      full       => fifo_full_2,
-      empty      => user_r_read_8_empty
-      );
-
-    -- reset_8 <= not (user_w_write_8_open or user_r_read_8_open);
-    reset_8 <= '0'; -- For now
-
-    user_r_read_8_eof <= '0'; -- For now
-
-  audio_ins : i2s_audio
-    port map(
-      bus_clk => bus_clk,
-      clk_100 => clk_100,
-      quiesce => quiesce,
-      audio_mclk => audio_mclk,
-      audio_dac => audio_dac,
-      audio_adc => audio_adc,
-      audio_bclk => audio_bclk,
-      audio_lrclk => audio_lrclk,
-      user_r_audio_rden => user_r_audio_rden,
-      user_r_audio_empty => user_r_audio_empty,
-      user_r_audio_data => user_r_audio_data,
-      user_r_audio_eof => user_r_audio_eof,
-      user_r_audio_open => user_r_audio_open,
-      user_w_audio_wren => user_w_audio_wren,
-      user_w_audio_full => user_w_audio_full,
-      user_w_audio_data => user_w_audio_data,
-      user_w_audio_open => user_w_audio_open
-      );
-
-  smbus_ins : smbus
-    port map(
-      bus_clk => bus_clk,
-      quiesce => quiesce,
-      smb_sclk => smb_sclk,
-      smb_sdata => smb_sdata,
-      smbus_addr => smbus_addr,
-      user_r_smb_rden => user_r_smb_rden,
-      user_r_smb_empty => user_r_smb_empty,
-      user_r_smb_data => user_r_smb_data,
-      user_r_smb_eof => user_r_smb_eof,
-      user_r_smb_open => user_r_smb_open,
-      user_w_smb_wren => user_w_smb_wren,
-      user_w_smb_full => user_w_smb_full,
-      user_w_smb_data => user_w_smb_data,
-      user_w_smb_open => user_w_smb_open
-      );
-  
 end sample_arch;
