@@ -4,6 +4,7 @@
 /src/**/*.o
 /testrun
 vivado*/
+/testdata*
 ghdl_tb/
 *~
 *.swp
