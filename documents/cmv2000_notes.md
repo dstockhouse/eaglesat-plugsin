@@ -185,8 +185,8 @@ disrupting data capture.
 Data read through the LVDS outputs is initiated automatically after the
 integration time and frame overhead time have completed. One master clock
 (CLK_IN) pulse corresponds to one pixel being read out on each LVDS channel
-used, so the LVDS data is output at 10 times the CLK_IN frequency for 10-bit
-operation.
+used, so the LVDS data is output at 5 times (because it's DDR) the CLK_IN
+frequency for 10-bit operation.
 
 Readout is in the form of 2 serial LVDS channels for pixel data sent and one
 line of control metadata sent along with all pixel data (and DDR LVDS clock,
@@ -223,6 +223,13 @@ the substrate before we begin testing.
 For ease and efficiency of memory usage, we will only use 8 of the 10 bits
 provided for each pixel. At one byte per pixel, a single complete frame in
 memory would take up 2048 x 1088 x = 2,228,224 bytes = 2.125 MB.
+
+After taking a closer look at the datasheet, I noticed that the LVDS clock is
+only 5 times the CLK_IN frequency, because of its DDR nature. Only the data rate
+is 10 times faster. So with the minimum CLK_IN frequency of 5MHz, the LVDS clock
+has a frequency of 25MHz, not 50MHz as the table on page 15 would indicate. This
+slightly relaxes the requirements of the PCB as the LVDS signals are moving half
+as fast as we had thought.
 
 ## Contact
 

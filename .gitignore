@@ -6,6 +6,7 @@
 /capture*
 /testdata*
 vivado*/
+/testdata*
 ghdl_tb/
 *~
 *.swp
