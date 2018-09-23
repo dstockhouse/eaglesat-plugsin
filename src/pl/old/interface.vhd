@@ -57,9 +57,9 @@ architecture Behavioral of interface is
 
 	component DDRlatch is
 		Port ( d : in STD_LOGIC;
-		       latch : in STD_LOGIC;
 		       clk : in STD_LOGIC;
 		       rst : in STD_LOGIC;
+		       latch : out STD_LOGIC;
 		       q : out STD_LOGIC_VECTOR (9 downto 0));
 	end component;
 

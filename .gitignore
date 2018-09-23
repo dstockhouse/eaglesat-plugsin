@@ -3,6 +3,8 @@
 /gpio/
 /src/**/*.o
 /testrun
+/capture*
+/testdata*
 vivado*/
 /testdata*
 ghdl_tb/

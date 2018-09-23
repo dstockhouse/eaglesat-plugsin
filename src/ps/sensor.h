@@ -40,6 +40,11 @@
 #define PIXEL_FILE_HIGH	"/dev/xillybus_read_8"
 #define PIXEL_FILE_LOW	"/dev/xillybus_read_32"
 
+#define PIXEL_FILE_HIGH	"/dev/xillybus_read_8"
+#define PIXEL_FILE_LOW	"/dev/xillybus_read_32"
+>>>>>>> new_ddr
+>>>>>>> master
+
 // Pin connections from the Zedboard PS to the CMV2000. Available pins found
 // in the xillydemo.ucf file in the src directory of the vivado xillybus code.
 // Path to that file in spiControl.h
