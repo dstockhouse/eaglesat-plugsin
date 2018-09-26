@@ -86,14 +86,28 @@ architecture Behavioral of new_latch is
 	end component;
 
 
-	component fifo_generator_0 is
+	component fifo_generator_8 is
 		port (
 				 clk : in std_logic;
 				 srst : in std_logic;
-				 din : in std_logic_vector(31 downto 0);
+				 din : in std_logic_vector(7 downto 0);
 				 wr_en : in std_logic;
 				 rd_en : in std_logic;
-				 dout : out std_logic_vector(31 downto 0);
+				 dout : out std_logic_vector(7 downto 0);
+				 full : out std_logic;
+				 empty : out std_logic
+	--							 data_count : out std_logic_vector (15 downto 0)
+			 );
+	end component;
+
+	component fifo_generator_16 is
+		port (
+				 clk : in std_logic;
+				 srst : in std_logic;
+				 din : in std_logic_vector(15 downto 0);
+				 wr_en : in std_logic;
+				 rd_en : in std_logic;
+				 dout : out std_logic_vector(15 downto 0);
 				 full : out std_logic;
 				 empty : out std_logic
 	--							 data_count : out std_logic_vector (15 downto 0)
@@ -135,31 +149,99 @@ architecture Behavioral of new_latch is
 
 
 
-		-- Finite state machine states
-		type STATE_TYPE is (Idle, Read_Inputs, Write_Outputs);
-		signal state : STATE_TYPE;
+	-- Finite state machine states
+	type STATE_TYPE is (Idle, Read_Inputs, Write_Outputs);
+	signal state : STATE_TYPE;
 
-		-- Counter to divide the clock down to a reasonable output frequency
-		signal output_counter : integer range 0 to CLOCK_DIV - 1 := CLOCK_DIV - 1;
-		signal row_counter : integer range 0 to PIXELS_PER_ROW - 1 := PIXELS_PER_ROW - 1;
+	-- Counter to divide the clock down to a reasonable output frequency
+	signal output_counter : integer range 0 to CLOCK_DIV - 1 := CLOCK_DIV - 1;
+	signal row_counter : integer range 0 to PIXELS_PER_ROW - 1 := PIXELS_PER_ROW - 1;
 
-		-- Counters to store the number inputs read & outputs written
-		signal nr_of_writes : natural range 0 to (ROWS_PER_CHANNEL - 1 := NUMBER_OF_OUTPUT_WORDS - 1;
+	-- Counters to store the number inputs read & outputs written
+	signal nr_of_writes : natural range 0 to (ROWS_PER_CHANNEL - 1 := NUMBER_OF_OUTPUT_WORDS - 1;
 
-		-- FIFO signals
-		signal fifo_input, fifo_output : std_logic_vector (31 downto 0);
-		--    signal fifo_datacount : std_logic_vector (15 downto 0);
-		signal fifo_rden, fifo_wren, fifo_full, fifo_empty, fifo_rst : std_logic;
+	-- FIFO signals
+	signal fifo_input_lsb, fifo_output_lsb : std_logic_vector (31 downto 0);
+	signal fifo_input_msb, fifo_output_msb : std_logic_vector (31 downto 0);
+	signal fifo_input_combined, fifo_output_combined : std_logic_vector (31 downto 0);
 
-		-- Buffer signals for AXI interface
-		signal sig_m_tvalid, sig_m_tlast : std_logic;
-		-- signal sig_m_tdata : std_logic_vector(31 downto 0);
+	signal fifo_rden_lsb, fifo_wren_lsb, fifo_full_lsb, fifo_empty_lsb, fifo_rst_lsb : std_logic;
+	signal fifo_rden_msb, fifo_wren_msb, fifo_full_msb, fifo_empty_msb, fifo_rst_msb : std_logic;
+	signal fifo_rden_combined, fifo_wren_combined, fifo_full_combined, fifo_empty_combined, fifo_rst_combined : std_logic;
+
+	-- Buffer signals for AXI interface
+	signal sig_m_tvalid, sig_m_tlast : std_logic;
+	-- signal sig_m_tdata : std_logic_vector(31 downto 0);
 
 begin
 
-		MAIN_PROC : process(clk, rst)
-		begin
+	-- Component instance port maps
+	FIFO_LSB_INST : fifo_generator_8 port map ( clk => clk,
+						srst => fifo_rst,
+						din => fifo_input_lsb,
+						wr_en => fifo_wren_lsb,
+						rd_en => fifo_rden_lsb,
+						dout => fifo_output_lsb,
+						full => fifo_full_lsb,
+						empty => fifo_empty_lsb,
+					);
+	FIFO_MSB_INST : fifo_generator_8 port map ( clk => clk,
+						srst => fifo_rst,
+						din => fifo_input_msb,
+						wr_en => fifo_wren_msb,
+						rd_en => fifo_rden_msb,
+						dout => fifo_output_msb,
+						full => fifo_full_msb,
+						empty => fifo_empty_msb,
+					);
+	FIFO_COMBINED_INST : fifo_generator_16 port map ( clk => clk,
+						srst => fifo_rst,
+						din => fifo_input_combined,
+						wr_en => fifo_wren_combined,
+						rd_en => fifo_rden_combined,
+						dout => fifo_output_combined,
+						full => fifo_full_combined,
+						empty => fifo_empty_combined,
+					);
 
-		end process; -- MAIN_PROC
+	INTERFACE_INST : new_latch port map ( d1 => d1,
+					      d2 => d2,
+					      d_ctl => d_ctl,
+					      train_en => train_en,
+					      pix_clk => pix_clk,
+					      clk => clk,
+					      rst => rst,
+					      clr => clr,
+					      out_latch => out_latch,
+					      locked => locked,
+					      q1 => ,
+					      q2 => q2,
+				      );
+
+	-- FIFO signal assignments
+	fifo_rst <= not rst;
+
+	-- LSB FIFO signals
+	fifo_input_lsb <= d1;
+	fifo_wren_lsb <= pass;
+	fifo_rden_lsb <= pass;
+
+	-- MSB FIFO signals
+	fifo_input_msb <= d1;
+	fifo_wren_msb <= pass;
+	fifo_rden_msb <= '1' when fifo_full_combined = '0' else '0';
+
+	-- Combined FIFO signals
+	fifo_input_combined <= fifo_output_msb & fifo_output_lsb;
+	fifo_wren_combined <= '1' when (fifo_empty_lsb = '0') and (fifo_empty_msb = '0') else '0';
+	fifo_rden_combined <= '1' when (M_AXIS_TREADY = '1') and (sig_m_tvalid = '1') else '0';
+
+
+	-- Interface signal assignments
+
+	MAIN_PROC : process(clk, rst)
+	begin
+
+	end process; -- MAIN_PROC
 
 end Behavioral;
