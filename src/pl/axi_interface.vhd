@@ -218,8 +218,13 @@ begin
 					      q2 => q2,
 				      );
 
-	-- FIFO signal assignments
+
+	-- Inverted reset signals for components
+	interface_rst <= not rst;
 	fifo_rst <= not rst;
+
+
+	---- FIFO signal assignments ----
 
 	-- LSB FIFO signals
 	fifo_input_lsb <= d1;
@@ -233,14 +238,25 @@ begin
 
 	-- Combined FIFO signals
 	fifo_input_combined <= fifo_output_msb & fifo_output_lsb;
-	fifo_wren_combined <= '1' when (fifo_empty_lsb = '0') and (fifo_empty_msb = '0') else '0';
+	-- fifo_wren_combined <= '1' when (fifo_empty_lsb = '0') and (fifo_empty_msb = '0') else '0';
 	fifo_rden_combined <= '1' when (M_AXIS_TREADY = '1') and (sig_m_tvalid = '1') else '0';
 
 
-	-- Interface signal assignments
+	---- Interface signal assignments ----
 
 	MAIN_PROC : process(clk, rst)
 	begin
+		if clk'EVENT and clk = '1' then
+
+		-- Inverted synchronous reset
+			if rst = '1' then
+				pass;
+			else
+				-- Reset
+				pass;
+			end if;
+		end if;
+
 
 	end process; -- MAIN_PROC
 
