@@ -248,12 +248,18 @@ begin
 	begin
 		if clk'EVENT and clk = '1' then
 
-		-- Inverted synchronous reset
+			-- Inverted synchronous reset
 			if rst = '1' then
 				pass;
 			else
-				-- Reset
-				pass;
+							-- Reset
+
+				state <= Idle;
+				nr_of_reads <= 0;
+				nr_of_writes <= 0;
+				sum <= (others => '0');
+				output_counter <= CLOCK_DIV - 1;
+				packet_counter <= PACKET_SIZE - 1;
 			end if;
 		end if;
 
