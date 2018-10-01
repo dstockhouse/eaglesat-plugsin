@@ -29,62 +29,63 @@ run 10 ns
 # Bit 0
 add_force {/cmv_interface/d1} -radix hex {1 0ns}
 add_force {/cmv_interface/d2} -radix hex {1 0ns}
-run 25 ns
-# add_force {/cmv_interface/ACLK} -radix hex {1 0ns} {0 5000ns} -repeat_every 10000ns
+run 10 ns
+# add_force {/cmv_interface/ACLK} -radix hex {1 0ns} {0 5000ps} -repeat_every 10000ps
 # add_force {/cmv_interface/pix_clk} -radix hex {1 0ns} {0 100000ps} -repeat_every 200000ps
 # add_force {/cmv_interface/lvds_clk} -radix hex {1 0ns} {0 20000ps} -repeat_every 40000ps
 add_force {/cmv_interface/d1} -radix hex {1 0ns}
 add_force {/cmv_interface/d2} -radix hex {1 0ns}
 add_force {/cmv_interface/d_ctl} -radix hex {0 0ns}
-run 25 ns
+run 10 ns
 
 # Bit 1
 add_force {/cmv_interface/d1} -radix hex {0 0ns}
 add_force {/cmv_interface/d2} -radix hex {0 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 2
 add_force {/cmv_interface/d1} -radix hex {1 0ns}
 add_force {/cmv_interface/d2} -radix hex {1 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 3
 add_force {/cmv_interface/d2} -radix hex {0 0ns}
 add_force {/cmv_interface/d1} -radix hex {0 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 4
 add_force {/cmv_interface/d1} -radix hex {1 0ns}
 add_force {/cmv_interface/d2} -radix hex {1 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 5
 add_force {/cmv_interface/d1} -radix hex {0 0ns}
 add_force {/cmv_interface/d2} -radix hex {0 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 6
 add_force {/cmv_interface/d1} -radix hex {1 0ns}
 add_force {/cmv_interface/d2} -radix hex {1 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 7
 add_force {/cmv_interface/d1} -radix hex {0 0ns}
 add_force {/cmv_interface/d2} -radix hex {0 0ns}
-run 50 ns
+run 20 ns
 
 # Bit 8
-run 50 ns
+run 20 ns
 
 # Bit 9
 add_force {/cmv_interface/d_ctl} -radix hex {1 0ns}
-run 50 ns
+run 20 ns
 
 add_force {/cmv_interface/M_AXIS_TREADY} -radix hex {1 0ns}
 
+
+
 #### Now for some more advance Tcl scripting
 
-# Maybe later
 
 set train_data [expr {0x55}]
 set train_ctl [expr {0x200}]
@@ -109,7 +110,7 @@ for {set j 0} {$j < 10} {incr j} {
 			add_force {/cmv_interface/d_ctl} -radix hex {0 0ns}
 		}
 
-		run 50 ns
+		run 20 ns
 
 	} ;# Loop through bits
 
@@ -151,7 +152,7 @@ for {set data 0} {$data < 256} {incr data} {
 			add_force {/cmv_interface/d_ctl} -radix hex {0 0ns}
 		}
 
-		run 50 ns
+		run 20 ns
 
 	} ;# Loop through bits
 

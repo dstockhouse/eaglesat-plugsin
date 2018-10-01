@@ -692,3 +692,12 @@ Getting back to modifying the system to allow the interface signals to work.
 
 Still need to adjust the AXI triggering.
 
+#### 11:46 PM
+
+I got it to the point where everything works well in Tcl simulation. But I tried
+to integrate the CMV simulator with the CMV interface in a block design and
+everything went to shit. Vivado's IP management is incredibly buggy with as
+convoluted and poorly generated IP repo as I have. So I'm going to probably end
+up regenerating all the IP from the source files tomorrow. But that's enough for
+tonight. 
+
