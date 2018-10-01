@@ -36,6 +36,7 @@
 
 // #define PIXEL_FILE_HIGH	"/dev/xillybus_cmos_rh_32"
 // #define PIXEL_FILE_LOW	"/dev/xillybus_cmos_rl_32"
+
 #define PIXEL_FILE_HIGH	"/dev/xillybus_read_8"
 #define PIXEL_FILE_LOW	"/dev/xillybus_read_32"
 
