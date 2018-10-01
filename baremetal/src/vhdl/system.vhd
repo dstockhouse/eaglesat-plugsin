@@ -89,6 +89,7 @@ entity cmv_interface is
 		PL_TO_PS : out std_logic_vector (31 downto 0);
 
 		-- CMV interface signals
+		lvds_clk : in STD_LOGIC;
 		d1 : in STD_LOGIC;
 		d2 : in STD_LOGIC;
 		d_ctl : in STD_LOGIC;
@@ -208,6 +209,7 @@ architecture Behavioral of cmv_interface is
 	-- Interface signals
 	signal int_q1, int_q2 : std_logic_vector (15 downto 0);
 	signal int_rst, int_locked, int_latch, int_clr : std_logic;
+	signal write_to_fifo : std_logic;
 
 
 
@@ -241,16 +243,16 @@ begin
 	fifo_count <= fifo_datacount;
 
 	-- Non-inverted reset
-	fifo_rst <= not ARESETN;
+	-- fifo_rst <= not ARESETN;
 
 	-- Output number of words left to write, which is already being counted
-	fifo_input <= q2 & q1q2 & q1;
+	fifo_input <= int_q2 & int_q1;
 
 	-- Output data from FIFO if source valid (FIFO not empty) and DMA ready
 	fifo_rden <= '1' when (fifo_empty = '0') and (M_AXIS_TREADY = '1') else '0';
 
 	-- Read out to FIFO what used to be TVALID output
-	fifo_wren <= '1' when (state = Write_Outputs) and (output_counter = 0) else '0';
+	-- fifo_wren <= '1' when (state = Write_Outputs) and (output_counter = 0) else '0';
 
 	-- If FIFO is not empty, read out of FIFO. Also takes care of undefined FIFO signals
 	-- sig_m_tvalid is assigned in the process statement
@@ -270,7 +272,7 @@ begin
 			 d_ctl => d_ctl,
 			 train_en => train_en,
 			 pix_clk => pix_clk,
-			 clk => ACLK,
+			 clk => lvds_clk,
 			 rst => int_rst,
 			 clr => int_clr,
 			 out_latch => int_latch,
@@ -303,8 +305,15 @@ begin
 
 	num_left <= std_logic_vector(to_unsigned(nr_of_writes, 32));
 
-	WRITE_TO_FIFO : process (ACLK) is
-	begin  -- process The_SW_accelerator
+	LATCH_PROC : process (ACLK, int_latch) is
+	begin
+
+		if int_latch'event and int_latch = '1' then
+
+			write_to_fifo <= '1';
+
+		end if;
+
 		if ACLK'event and ACLK = '1' then     -- Rising clock edge
 			if ARESETN = '0' then               -- Synchronous reset (active low)
 							    -- CAUTION: make sure your reset polarity is consistent with the
@@ -313,18 +322,15 @@ begin
 				nr_of_writes <= NUMBER_OF_OUTPUT_WORDS - 1;
 				fifo_delay_counter <= FIFO_DELAY - 1;
 				sum <= (others => '0');
-				--				sum1 <= (others => '0');
-				--				sum2 <= (others => '1');
 				output_counter <= CLOCK_DIV - 1;
 				packet_counter <= PACKET_SIZE - 1;
-			--                OVERFLOW <= '0';
+				fifo_rst <= '1';
+--                OVERFLOW <= '0';
 
-			--                CLOCK_DIV <= 40;
-			--                PACKET_SIZE <= NUM_ROWS * PIXELS_PER_ROW / 4;
-			--                NUMBER_OF_OUTPUT_PACKETS <= (NUM_ROWS * PIXELS_PER_ROW / 4 / PACKET_SIZE);
-			--                NUMBER_OF_OUTPUT_PACKETS <= 1;
 
 			else -- ARESETN
+
+				fifo_rst <= '0';
 
 				if fifo_rden = '1' then
 					sig_m_tvalid <= '1';
@@ -332,30 +338,36 @@ begin
 					sig_m_tvalid <= '0';
 				end if;
 
+				fifo_wren <= '0';
+				if write_to_fifo = '1' then
+					fifo_wren <= '1';
+					write_to_fifo <= '0';
+				end if;
+
+
+
 				case state is
 					when Idle =>
 						if TRIGGER = '1' then
 							state       <= Write_Outputs;
 							nr_of_writes <= NUMBER_OF_OUTPUT_WORDS - 1;
 							sum <= (others => '0');
-							--							sum1 <= (others => '0');
-							--                          sum2 <= (others => '1');
 							output_counter <= CLOCK_DIV - 1;
 							packet_counter <= PACKET_SIZE - 1;
 							fifo_delay_counter <= FIFO_DELAY - 1;
-						--							OVERFLOW <= '0';
-						--							left_at_overflow <= (others => '0');
+--							OVERFLOW <= '0';
+--							left_at_overflow <= (others => '0');
 
 						-- Latch input GPIO to respective positions
-						--							if to_integer(unsigned(PS_TO_PL(9 downto 1))) > 0 then
-						--                                CLOCK_DIV <= to_integer(unsigned(PS_TO_PL(9 downto 1)));
-						--                            end if;
-						--                            if to_integer(unsigned(PS_TO_PL(19 downto 10))) > 0 then
-						--                                PACKET_SIZE <= to_integer(unsigned(PS_TO_PL(19 downto 10)));
-						--                            end if;
-						--                            if to_integer(unsigned(PS_TO_PL(31 downto 20))) > 0 then
-						--                                NUMBER_OF_OUTPUT_PACKETS <= to_integer(unsigned(PS_TO_PL(31 downto 20)));
-						--                            end if;
+--							if to_integer(unsigned(PS_TO_PL(9 downto 1))) > 0 then
+--                                CLOCK_DIV <= to_integer(unsigned(PS_TO_PL(9 downto 1)));
+--                            end if;
+--                            if to_integer(unsigned(PS_TO_PL(19 downto 10))) > 0 then
+--                                PACKET_SIZE <= to_integer(unsigned(PS_TO_PL(19 downto 10)));
+--                            end if;
+--                            if to_integer(unsigned(PS_TO_PL(31 downto 20))) > 0 then
+--                                NUMBER_OF_OUTPUT_PACKETS <= to_integer(unsigned(PS_TO_PL(31 downto 20)));
+--                            end if;
 						end if;
 
 					when Write_Outputs =>

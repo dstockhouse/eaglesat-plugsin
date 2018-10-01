@@ -42,7 +42,7 @@ entity hw_interface is
 	Generic (
 			-- The only acceptable values are 1, 2, and 4
 			pixels_per_word : integer := 2
-	);
+		);
 	Port ( 
 		     d1 : in STD_LOGIC;
 		     d2 : in STD_LOGIC;
@@ -100,25 +100,25 @@ begin
 
 	-- Instances of the DDRshift component
 	D1_INST : DDRshift 
-		generic map (bits => INPUT_BUFFER_LEN)
-		port map (d => d1,
-			  clk => clk,
-			  rst => ddr_rst,
-			  q => int_q1);
+	generic map (bits => INPUT_BUFFER_LEN)
+	port map (d => d1,
+		  clk => clk,
+		  rst => ddr_rst,
+		  q => int_q1);
 
 	D2_INST : DDRshift 
-		generic map (bits => INPUT_BUFFER_LEN)
-		port map (d => d2,
-			  clk => clk,
-			  rst => rst,
-			  q => int_q2);
+	generic map (bits => INPUT_BUFFER_LEN)
+	port map (d => d2,
+		  clk => clk,
+		  rst => rst,
+		  q => int_q2);
 
 	CTL_INST : DDRshift 
-		generic map (bits => INPUT_BUFFER_LEN)
-		port map (d => d_ctl,
-			  clk => clk,
-			  rst => rst,
-			  q => int_ctl);
+	generic map (bits => INPUT_BUFFER_LEN)
+	port map (d => d_ctl,
+		  clk => clk,
+		  rst => rst,
+		  q => int_ctl);
 
 	ddr_rst <= rst;
 	-- ddr_rst <= rst or clr;
@@ -298,8 +298,35 @@ begin
 					-- q2 <= (others => '0');
 
 					-- For debugging
-					q1 <= int_q1((pos1+9) downto (pos1+2));
-					q2 <= int_q2((pos2+9) downto (pos2+2));
+					if pixels_per_word = 1 then
+
+						q1 <= int_q1((pos1+9) downto (pos1+2));
+						q2 <= int_q2((pos2+9) downto (pos2+2));
+
+					elsif pixels_per_word = 2 then
+
+						-- Form output words by concatenating bytes
+						-- from the input buffer
+						q1 <= int_q1((pos1+19) downto (pos1+12))
+						      & int_q1((pos1+9) downto (pos1+2));
+
+						q2 <= int_q2((pos2+19) downto (pos2+12))
+						      & int_q2((pos2+9) downto (pos2+2));
+
+					elsif pixels_per_word = 4 then
+
+						-- Form output words by concatenating bytes
+						-- from the input buffer
+						q1 <= int_q1((pos1+39) downto (pos1+32))
+						      & int_q1((pos1+29) downto (pos1+22))
+						      & int_q1((pos1+19) downto (pos1+12))
+						      & int_q1((pos1+9) downto (pos1+2));
+
+						q2 <= int_q2((pos2+39) downto (pos2+32))
+						      & int_q2((pos2+29) downto (pos2+22))
+						      & int_q2((pos2+19) downto (pos2+12))
+						      & int_q2((pos2+9) downto (pos2+2));
+					end if;
 
 				else -- int_train
 
