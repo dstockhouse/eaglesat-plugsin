@@ -297,10 +297,10 @@ begin
 
 	-- Parse signals to and from processor
 	TRIGGER <= PS_TO_PL(0);
-	--    NUMBER_OF_OUTPUT_WORDS <= PACKET_SIZE * NUMBER_OF_OUTPUT_PACKETS;
+	-- NUMBER_OF_OUTPUT_WORDS <= PACKET_SIZE * NUMBER_OF_OUTPUT_PACKETS;
 
-	--	PL_TO_PS(0) <= OVERFLOW;
-	--	PL_TO_PS(31 downto 1) <= left_at_overflow(30 downto 0);
+	-- PL_TO_PS(0) <= OVERFLOW;
+	-- PL_TO_PS(31 downto 1) <= left_at_overflow(30 downto 0);
 	PL_TO_PS <= (others => '0');
 
 	num_left <= std_logic_vector(to_unsigned(nr_of_writes, 32));
@@ -325,7 +325,9 @@ begin
 				output_counter <= CLOCK_DIV - 1;
 				packet_counter <= PACKET_SIZE - 1;
 				fifo_rst <= '1';
---                OVERFLOW <= '0';
+				fifo_wren <= '0';
+				write_to_fifo <= '0';
+				-- OVERFLOW <= '0';
 
 
 			else -- ARESETN
@@ -355,19 +357,19 @@ begin
 							output_counter <= CLOCK_DIV - 1;
 							packet_counter <= PACKET_SIZE - 1;
 							fifo_delay_counter <= FIFO_DELAY - 1;
---							OVERFLOW <= '0';
---							left_at_overflow <= (others => '0');
+							-- OVERFLOW <= '0';
+							-- left_at_overflow <= (others => '0');
 
-						-- Latch input GPIO to respective positions
---							if to_integer(unsigned(PS_TO_PL(9 downto 1))) > 0 then
---                                CLOCK_DIV <= to_integer(unsigned(PS_TO_PL(9 downto 1)));
---                            end if;
---                            if to_integer(unsigned(PS_TO_PL(19 downto 10))) > 0 then
---                                PACKET_SIZE <= to_integer(unsigned(PS_TO_PL(19 downto 10)));
---                            end if;
---                            if to_integer(unsigned(PS_TO_PL(31 downto 20))) > 0 then
---                                NUMBER_OF_OUTPUT_PACKETS <= to_integer(unsigned(PS_TO_PL(31 downto 20)));
---                            end if;
+							-- Latch input GPIO to respective positions
+							-- if to_integer(unsigned(PS_TO_PL(9 downto 1))) > 0 then
+								-- CLOCK_DIV <= to_integer(unsigned(PS_TO_PL(9 downto 1)));
+							-- end if;
+							-- if to_integer(unsigned(PS_TO_PL(19 downto 10))) > 0 then
+								-- PACKET_SIZE <= to_integer(unsigned(PS_TO_PL(19 downto 10)));
+							-- end if;
+							-- if to_integer(unsigned(PS_TO_PL(31 downto 20))) > 0 then
+								-- NUMBER_OF_OUTPUT_PACKETS <= to_integer(unsigned(PS_TO_PL(31 downto 20)));
+							-- end if;
 						end if;
 
 					when Write_Outputs =>
