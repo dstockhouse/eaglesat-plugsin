@@ -325,6 +325,10 @@ begin
 				output_counter <= CLOCK_DIV - 1;
 				packet_counter <= PACKET_SIZE - 1;
 				fifo_rst <= '1';
+				fifo_wren <= '0';
+				fifo_rden <= '0';
+
+				sig_m_tvalid <= '0';
 --                OVERFLOW <= '0';
 
 

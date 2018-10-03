@@ -7,7 +7,7 @@ add_force {/cmv_interface/d_ctl} -radix hex {0 0ns}
 add_force {/cmv_interface/train_en} -radix hex {0 0ns}
 add_force {/cmv_interface/pix_clk} -radix hex {0 0ns}
 add_force {/cmv_interface/ACLK} -radix hex {0 0ns}
-add_force {/cmv_interface/ARESETN} -radix hex {0 0ns}
+add_force {/cmv_interface/ARESETN} -radix hex {1 0ns}
 
 # Clocks
 add_force {/cmv_interface/ACLK} -radix hex {1 0ns} {0 5000ps} -repeat_every 10000ps
@@ -17,6 +17,10 @@ add_force {/cmv_interface/lvds_clk} -radix hex {1 0ns} {0 20000ps} -repeat_every
 add_force {/cmv_interface/M_AXIS_TREADY} -radix hex {0 0ns}
 
 run 10 ns
+
+add_force {/cmv_interface/ARESETN} -radix hex {0 0ns}
+
+run 90 ns
 
 # rst off
 add_force {/cmv_interface/ARESETN} -radix hex {1 0ns}
