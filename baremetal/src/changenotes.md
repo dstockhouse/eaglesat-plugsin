@@ -701,3 +701,21 @@ convoluted and poorly generated IP repo as I have. So I'm going to probably end
 up regenerating all the IP from the source files tomorrow. But that's enough for
 tonight. 
 
+### October 1, 2018
+
+#### 6:07 PM
+
+Plan for the day is to get the CMV simulator working on the Zedboard, then I'll
+feel confident that I can try to get it running on the actual sensor. 
+
+I made new project files for the interface and simulator, so I can try to remake
+the IP and put it into a project to simulate in software the sensor simulator IP
+along with the interface itself. When that gets working I'll put this IP back
+into the CRP system project.
+
+####  7:21 PM
+
+The Vivado simulator is giving me ridiculous behavior. I don't know how to
+explain it except that it's incredibly buggy, and I don't have any solution to
+get it to work better. 
+

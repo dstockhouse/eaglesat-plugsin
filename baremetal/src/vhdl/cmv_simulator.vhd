@@ -31,7 +31,6 @@ entity cmv_simulator is
 		     d1 : out STD_LOGIC;
 		     d2 : out STD_LOGIC;
 		     d_ctl : out STD_LOGIC;
-		     train_en : out STD_LOGIC;
 		     lvds_clk : out STD_LOGIC
 	     );
 end cmv_simulator;
@@ -67,7 +66,6 @@ begin
 	d1 <= int_d1;
 	d2 <= int_d2;
 	d_ctl <= int_ctl;
-	train_en <= int_train;
 
 	CLOCK_DIVIDER : process(clk, rst)
 		variable lvds_clk_counter : std_logic_vector (1 downto 0);
